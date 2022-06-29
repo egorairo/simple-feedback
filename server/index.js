@@ -19,14 +19,12 @@ app.post('/api/register', async (req, res) => {
       email: req.body.email,
     })
 
-    console.log(req.body.email)
-
     if (!userEmail) {
       await User.create({
         email: req.body.email,
         password: newPassword,
       })
-      console.log(User, User())
+
       return res.json({status: 'ok'})
     } else {
       return res.json({status: 'error', error: 'Duplicate email'})
@@ -40,7 +38,7 @@ app.post('/api/login', async (req, res) => {
   const user = await User.findOne({
     email: req.body.email,
   })
-  console.log(user)
+
   if (!user) {
     return res.json({status: 'error', error: 'Invalid login'})
   }
@@ -66,9 +64,6 @@ app.post('/api/login', async (req, res) => {
 
 app.post('/api/surveys', async (req, res) => {
   const token = req.headers['x-access-token']
-  console.log('token', token)
-  console.log('surveys', req.body.surveys)
-  console.log('names', req.body.names)
 
   try {
     const decoded = jwt.verify(token, 'secret123')
@@ -96,6 +91,82 @@ app.get('/api/surveys', async (req, res) => {
     const user = await User.findOne({email: email})
 
     return res.json({status: 'ok', surveys: user.surveys})
+  } catch (error) {
+    console.log(error)
+    return res.json({status: 'error', error: 'invalid token'})
+  }
+})
+
+app.get('/api/defaultSurvey', async (req, res) => {
+  const token = req.headers['x-access-token']
+
+  try {
+    const decoded = jwt.verify(token, 'secret123')
+    const email = decoded.email
+
+    const user = await User.findOne({email: email})
+
+    return res.json({
+      status: 'ok',
+      defaultSurvey: user.defaultSurvey,
+    })
+  } catch (error) {
+    console.log(error)
+    return res.json({status: 'error', error: 'invalid token'})
+  }
+})
+
+app.post('/api/defaultSurvey', async (req, res) => {
+  const token = req.headers['x-access-token']
+
+  try {
+    const decoded = jwt.verify(token, 'secret123')
+    const email = decoded.email
+
+    await User.updateOne(
+      {email: email},
+      {$set: {defaultSurvey: req.body.defaultSurvey}}
+    )
+
+    return res.json({status: 'ok'})
+  } catch (error) {
+    console.log(error)
+    return res.json({status: 'error', error: 'invalid token'})
+  }
+})
+
+app.get('/api/giveFeedback', async (req, res) => {
+  const token = req.headers['x-access-token']
+
+  try {
+    const decoded = jwt.verify(token, 'secret123')
+    const email = decoded.email
+
+    const user = await User.findOne({email: email})
+
+    return res.json({
+      status: 'ok',
+      givenFeedback: user.givenFeedback,
+    })
+  } catch (error) {
+    console.log(error)
+    return res.json({status: 'error', error: 'invalid token'})
+  }
+})
+
+app.post('/api/giveFeedback', async (req, res) => {
+  const token = req.headers['x-access-token']
+
+  try {
+    const decoded = jwt.verify(token, 'secret123')
+    const email = decoded.email
+
+    await User.updateOne(
+      {email: email},
+      {$set: {givenFeedback: req.body.givenFeedback}}
+    )
+
+    return res.json({status: 'ok'})
   } catch (error) {
     console.log(error)
     return res.json({status: 'error', error: 'invalid token'})

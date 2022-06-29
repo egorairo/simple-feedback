@@ -92,35 +92,18 @@ export default function Feedback() {
   }
 
   const handleClickSaveSurvey = () => {
-    console.log(surveys)
-    const [survey] = surveys.filter((survey) => survey.id === id)
-    console.log(survey)
-    survey.names = editNameValues
-    survey.votingValues = editVotingValues
-    survey.extendedValues = editExtendedValues
-    survey.thanksValues = editThanksValues
-    console.log(survey)
-    // const newSurveys = survey.map(
-    //   ({names, votingValues, extendedValues, thanksValues}) => {
-    //     console.log(names)
-    //     names = editNameValues
-    //     votingValues = editVotingValues
-    //     extendedValues = editExtendedValues
-    //     thanksValues = editThanksValues
-    //   }
-    // )
+    const newSurveys = surveys.map((survey) => {
+      if (survey.id === id) {
+        survey.names = editNameValues
+        survey.votingValues = editVotingValues
+        survey.extendedValues = editExtendedValues
+        survey.thanksValues = editThanksValues
+      }
+    })
 
-    updateSurveys()
+    setSurveys(newSurveys)
 
-    localStorage.setItem(
-      id,
-      JSON.stringify({
-        editNameValues,
-        editVotingValues,
-        editExtendedValues,
-        editThanksValues,
-      })
-    )
+    updateSurveys(surveys)
 
     dispatch(setNames(editNameValues))
     dispatch(setVotingValues(editVotingValues))
@@ -129,26 +112,20 @@ export default function Feedback() {
 
     setSaved(true)
 
-    // surveys.map((survey) => {
-    //   if (survey.id === id) {
-    //     survey.names = editNameValues
-    //   }
-    // })
-
-    localStorage.setItem('surveys', JSON.stringify(surveys))
-
     setTimeout(() => {
       setSaved(false)
     }, 3000)
   }
 
-  const handleClickDeleteSurvey = useCallback((id) => {
+  const handleClickDeleteSurvey = (id) => {
     const newSurveys = surveys.filter((survey) => survey.id !== id)
 
-    localStorage.setItem('surveys', JSON.stringify(newSurveys))
+    setSurveys(newSurveys)
+
+    updateSurveys(newSurveys)
 
     navigate('/feedbacks')
-  }, [])
+  }
 
   // coping logic
   const handleClickBulletsCopy = useCallback(() => {
@@ -1613,7 +1590,7 @@ export default function Feedback() {
             role="alert"
             className="toast self-center text-white bg-[#4bbf73]"
           >
-            <div>{`Feedback form ${editNameValues.formName} successfully saved.`}</div>
+            <div>{`Survey ${editNameValues.formName} was successfully saved.`}</div>
           </div>
         </div>
       ) : (

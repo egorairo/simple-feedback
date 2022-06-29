@@ -9,7 +9,8 @@ export default function Header({
   path,
   dashPath,
   surveyCreatePath,
-  feedbacksPath,
+  surveysPath,
+  defaultSurveyPath,
 }) {
   const dispatch = useDispatch()
   const navigate = useNavigate()
@@ -124,12 +125,22 @@ export default function Header({
                 <Link
                   to="/feedbacks"
                   className={`${
-                    !(feedbacksPath === '/feedbacks')
+                    !(surveysPath === '/feedbacks')
                       ? 'headerRightLink'
                       : 'headerRightLinkActive'
                   }`}
                 >
                   All Surveys
+                </Link>
+                <Link
+                  to="/account/default"
+                  className={`${
+                    !(defaultSurveyPath === '/account/default')
+                      ? 'headerRightLink'
+                      : 'headerRightLinkActive'
+                  }`}
+                >
+                  Default survey
                 </Link>
                 <div className="dropdown items-center">
                   <Link
@@ -169,9 +180,9 @@ Header.propTypes = {
 }
 
 Header.propTypes = {
-  feedbackPath: PropTypes.string,
+  surveysPath: PropTypes.string,
 }
 
 Header.propTypes = {
-  feedbacksPath: PropTypes.string,
+  defaultSurveyPath: PropTypes.string,
 }

@@ -7,7 +7,7 @@ import DefaultSurvey from '../components/DefaultSurvey'
 export default function DefaultSurveyPage({path}) {
   return (
     <>
-      <Header feedbackPath={path} />
+      <Header defaultSurveyPath={path} />
       <DefaultSurvey />
     </>
   )

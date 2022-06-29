@@ -1,14 +1,20 @@
 import React, {useState, useEffect} from 'react'
 import {Link} from 'react-router-dom'
+import {decodeToken} from 'react-jwt'
+import {useNavigate} from 'react-router-dom'
 
 export default function DefaultSurvey() {
+  const navigate = useNavigate()
+
+  const [defaultSurvey, setDefaultSurvey] = useState([])
+
   const [savedDefault, setSavedDefault] = useState(false)
 
   const [voting, setVoting] = useState(true)
   const [extendedPage, setExtendedPage] = useState(false)
   const [thankYouPage, setThankYouPage] = useState(false)
 
-  const [defaultName, setDefaultName] = useState({})
+  const [defaultName, setDefaultName] = useState({name: ''})
   const [defaultVotingValues, setDefaultVotingValues] = useState({
     thumbsHeadline: 'Was it useful? Help us to improve!',
     thumbsParagraph:
@@ -37,31 +43,78 @@ export default function DefaultSurvey() {
     typRedirect: 'https://mydomain.com/myredirect',
   })
 
-  useEffect(() => {
-    const defaultSurvey = JSON.parse(
-      localStorage.getItem('defaultSurvey')
+  async function getDefaultSurvey() {
+    const req = await fetch(
+      'http://localhost:1337/api/defaultSurvey',
+      {
+        headers: {
+          'x-access-token': localStorage.getItem('token'),
+        },
+      }
     )
 
-    if (defaultSurvey) {
-      setDefaultName(defaultSurvey?.defaultName || {})
-      setDefaultVotingValues(defaultSurvey?.defaultVotingValues || {})
-      setDefaultExtendedValues(
-        defaultSurvey?.defaultExtendedValues || {}
-      )
-      setDefaultThanksValues(defaultSurvey?.defaultThanksValues || {})
+    const data = await req.json()
+
+    if (data.status === 'ok') {
+      const [defaultSurvey] = data.defaultSurvey
+
+      setDefaultSurvey(defaultSurvey)
+
+      setDefaultName(defaultSurvey.names)
+      setDefaultVotingValues(defaultSurvey.votingValues)
+      setDefaultExtendedValues(defaultSurvey.extendedValues)
+      setDefaultThanksValues(defaultSurvey.thanksValues)
+    } else {
+      alert(data.error)
+    }
+  }
+
+  useEffect(() => {
+    const token = localStorage.getItem('token')
+    if (token) {
+      const user = decodeToken(token)
+      if (!user) {
+        localStorage.removeItem('token')
+        navigate('/')
+      } else {
+        getDefaultSurvey()
+      }
     }
   }, [])
 
-  const handleClickSaveDefaultSurvey = () => {
-    localStorage.setItem(
-      'defaultSurvey',
-      JSON.stringify({
-        defaultName,
-        defaultVotingValues,
-        defaultExtendedValues,
-        defaultThanksValues,
-      })
+  const updateDefaultSurveys = async (defaultSurvey) => {
+    const req = await fetch(
+      'http://localhost:1337/api/defaultSurvey',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-access-token': localStorage.getItem('token'),
+        },
+        body: JSON.stringify({
+          defaultSurvey: defaultSurvey,
+        }),
+      }
     )
+
+    const data = await req.json()
+
+    if (data.status === 'ok') {
+      setDefaultSurvey(defaultSurvey)
+    } else {
+      return data.error
+    }
+  }
+
+  const handleClickSaveDefaultSurvey = () => {
+    const newDefaultSurvey = {
+      names: defaultName,
+      votingValues: defaultVotingValues,
+      extendedValues: defaultExtendedValues,
+      thanksValues: defaultThanksValues,
+    }
+
+    updateDefaultSurveys(newDefaultSurvey)
 
     setSavedDefault(true)
 

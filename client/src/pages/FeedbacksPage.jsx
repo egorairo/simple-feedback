@@ -7,7 +7,7 @@ import Feedbacks from '../components/Feedbacks'
 export default function FeedbacksPage({path}) {
   return (
     <>
-      <Header feedbacksPath={path} />
+      <Header surveysPath={path} />
       <Feedbacks />
     </>
   )
