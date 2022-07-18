@@ -54,6 +54,7 @@ export default function Login() {
                 <div className="mb-3">
                   <input
                     name="email"
+                    type="email"
                     className="w-full max-w-full py-2 px-3 rounded-md border border-[#dbdbdb] input-shadow"
                     placeholder="Your email"
                     value={email}
@@ -63,6 +64,7 @@ export default function Login() {
                 <div className="mb-3">
                   <input
                     name="password"
+                    type="password"
                     className="w-full max-w-full py-2 px-3 rounded-md border border-[#dbdbdb] input-shadow"
                     placeholder="Your password"
                     value={password}

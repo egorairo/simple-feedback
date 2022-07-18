@@ -11,6 +11,7 @@ import FeedbackPage from './pages/FeedbackPage'
 import GiveFeedbackPage from './pages/GiveFeedbackPage'
 import FeedbacksPage from './pages/FeedbacksPage'
 import DefaultSurveyPage from './pages/DefaultSurveyPage'
+import FAQPage from './pages/FAQPage'
 
 export default function Routing() {
   const location = useLocation()
@@ -54,6 +55,10 @@ export default function Routing() {
       <Route
         path="/account/default"
         element={<DefaultSurveyPage path={location.pathname} />}
+      />
+      <Route
+        path="/faq"
+        element={<FAQPage path={location.pathname} />}
       />
     </Routes>
   )

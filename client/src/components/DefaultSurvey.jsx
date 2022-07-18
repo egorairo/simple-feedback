@@ -6,7 +6,7 @@ import {useNavigate} from 'react-router-dom'
 export default function DefaultSurvey() {
   const navigate = useNavigate()
 
-  const [defaultSurvey, setDefaultSurvey] = useState([])
+  // const [defaultSurvey, setDefaultSurvey] = useState([])
 
   const [savedDefault, setSavedDefault] = useState(false)
 
@@ -25,7 +25,9 @@ export default function DefaultSurvey() {
   })
   const [defaultExtendedValues, setDefaultExtendedValues] = useState({
     thankYouLine: 'Thank you. Your feedback was successfully shared.',
-    thumbsokReasonHeader: '😐 Meh - was ok.',
+    thumbsupReasonHeader: '😀 you did enjoy your NAME email 😀',
+    thumbsokReasonHeader:
+      '😐 you are not sure what to think about NAME email 😐',
     thumbsdownReasonHeader: '😐 you didn’t enjoy this email 😐',
     efpWhyBoxText: 'Why',
     efpWhyBoxPlaceholder: 'Listen to your gut :-)',
@@ -57,8 +59,6 @@ export default function DefaultSurvey() {
 
     if (data.status === 'ok') {
       const [defaultSurvey] = data.defaultSurvey
-
-      setDefaultSurvey(defaultSurvey)
 
       setDefaultName(defaultSurvey.names)
       setDefaultVotingValues(defaultSurvey.votingValues)
@@ -100,7 +100,7 @@ export default function DefaultSurvey() {
     const data = await req.json()
 
     if (data.status === 'ok') {
-      setDefaultSurvey(defaultSurvey)
+      // setDefaultSurvey(defaultSurvey)
     } else {
       return data.error
     }
@@ -133,14 +133,7 @@ export default function DefaultSurvey() {
             <div className="flex items-stretch justify-between overflow-hidden whitespace-nowrap mb-0">
               <ul className="flex items-center justify-start border-b border-[#dbdbdb] grow shrink-0 list-none ">
                 <li className="block p-o m-0">
-                  <a
-                    className={'feedbackLinksActive feedbackLinks'}
-                    // onClick={() => {
-                    //   setAnalytics(true)
-                    //   setEdit(false)
-                    //   setCode(false)
-                    // }}
-                  >
+                  <a className={'feedbackLinksActive feedbackLinks'}>
                     Newsletter Survey Defaults
                   </a>
                 </li>
@@ -161,33 +154,33 @@ export default function DefaultSurvey() {
                   </Link>
                   .
                 </p>
-                <div className="flex flex-wrap -m-3">
+                <div className="mb-3">
+                  <label
+                    htmlFor="name"
+                    className="block text-base text-[#363636] font-semibold mb-2"
+                  >
+                    Your Name
+                  </label>
+                  <div className="text-base box-border relative">
+                    <input
+                      id="name"
+                      name="name"
+                      type="text"
+                      placeholder="Your name that can be used in a placeholder on the extended feedback page"
+                      required
+                      value={defaultName.name}
+                      className="max-w-full w-full bg-white border border-[#dbdbdb] rounded-md input-shadow text[#363636]"
+                      onChange={(e) =>
+                        setDefaultName((prevValue) => ({
+                          ...prevValue,
+                          name: e.target.value,
+                        }))
+                      }
+                    ></input>
+                  </div>
+                </div>
+                <div className="columns flex-wrap -m-3">
                   <div className="column">
-                    <div className="mb-3">
-                      <label
-                        htmlFor="name"
-                        className="block text-base text-[#363636] font-semibold mb-2"
-                      >
-                        Your Name
-                      </label>
-                      <div className="text-base box-border relative">
-                        <input
-                          id="name"
-                          name="name"
-                          type="text"
-                          placeholder="Your name that can be used in a placeholder on the extended feedback page"
-                          required
-                          value={defaultName.name}
-                          className="max-w-full w-full bg-white border border-[#dbdbdb] rounded-md input-shadow text[#363636]"
-                          onChange={(e) =>
-                            setDefaultName((prevValue) => ({
-                              ...prevValue,
-                              name: e.target.value,
-                            }))
-                          }
-                        ></input>
-                      </div>
-                    </div>
                     <div className="my-5">
                       <h2 className="text-center text-[#4a4a4a] text-lg font-normal mb-6">
                         Customize
@@ -247,7 +240,7 @@ export default function DefaultSurvey() {
                       <div>
                         {voting && (
                           <div>
-                            <div className="flex flex-wrap -my-3 -mx-8">
+                            <div className="columns flex-wrap -my-3 -mx-8">
                               <div className="block basis-0 grow shrink py-3 px-8">
                                 <p className="mb-4">
                                   The voting section is the part you
@@ -431,34 +424,34 @@ export default function DefaultSurvey() {
                                   <p className="text-xl font-normal mb-4">
                                     <strong className="text-[#363636]">
                                       {!defaultVotingValues.thumbsHeadline
-                                        ? 'Was it useful? Help us to improve!'
+                                        ? ''
                                         : defaultVotingValues.thumbsHeadline}
                                     </strong>
                                   </p>
                                   <p className="text-xl mb-4">
                                     {!defaultVotingValues.thumbsParagraph
-                                      ? 'With your feedback, we can improve the letter. Click on a link to vote:'
+                                      ? ''
                                       : defaultVotingValues.thumbsParagraph}
                                   </p>
                                   <ul className="list-disc mt-8 ml-4">
                                     <li>
                                       <a className="text-xl cursor-pointer text-[#4185f3] no-underline hover:text-[#1c6def]">
                                         {!defaultVotingValues.thumbsup
-                                          ? '😀 That helped me. Thanks'
+                                          ? ''
                                           : defaultVotingValues.thumbsup}
                                       </a>
                                     </li>
                                     <li className="mt-1">
                                       <a className="text-xl cursor-pointer text-[#4185f3] no-underline hover:text-[#1c6def]">
                                         {!defaultVotingValues.thumbsok
-                                          ? '😐 Meh - was ok.'
+                                          ? ''
                                           : defaultVotingValues.thumbsok}
                                       </a>
                                     </li>
                                     <li className="mt-1">
                                       <a className="text-xl cursor-pointer text-[#4185f3] no-underline hover:text-[#1c6def]">
                                         {!defaultVotingValues.thumbsdown
-                                          ? '🙁 Not interesting to me.'
+                                          ? ''
                                           : defaultVotingValues.thumbsdown}
                                       </a>
                                     </li>
@@ -472,31 +465,31 @@ export default function DefaultSurvey() {
                                   <p className="text-xl font-normal mb-4">
                                     <strong className="text-[#363636]">
                                       {!defaultVotingValues.thumbsHeadline
-                                        ? 'Was it useful? Help us to improve!'
+                                        ? ''
                                         : defaultVotingValues.thumbsHeadline}
                                     </strong>
                                   </p>
                                   <p className="text-xls mb-4">
                                     {!defaultVotingValues.thumbsParagraph
-                                      ? 'With your feedback, we can improve the letter. Click on a link to vote:'
+                                      ? ''
                                       : defaultVotingValues.thumbsParagraph}
                                   </p>
                                   <p className="">
                                     <a className="text-xl cursor-pointer text-[#4185f3] no-underline hover:text-[#1c6def]">
                                       {!defaultVotingValues.thumbsup
-                                        ? '😀 That helped me. Thanks'
+                                        ? ''
                                         : defaultVotingValues.thumbsup}
                                     </a>{' '}
                                     -{' '}
                                     <a className="text-xl cursor-pointer text-[#4185f3] no-underline hover:text-[#1c6def]">
                                       {!defaultVotingValues.thumbsok
-                                        ? '😐 Meh - was ok.'
+                                        ? ''
                                         : defaultVotingValues.thumbsok}
                                     </a>{' '}
                                     -{' '}
                                     <a className="text-xl cursor-pointer text-[#4185f3] no-underline hover:text-[#1c6def]">
                                       {!defaultVotingValues.thumbsdown
-                                        ? '🙁 Not interesting to me.'
+                                        ? ''
                                         : defaultVotingValues.thumbsdown}
                                     </a>
                                   </p>
@@ -507,7 +500,7 @@ export default function DefaultSurvey() {
                         )}
                         {extendedPage && (
                           <div>
-                            <div className="flex flex-wrap -my-3 -mx-8">
+                            <div className="columns flex-wrap -my-3 -mx-8">
                               <div className="block basis-0 grow shrink py-3 px-8">
                                 <p className="text-[#4a4a4a] mb-4">
                                   The Extended Feedback Page is shown
@@ -538,7 +531,8 @@ export default function DefaultSurvey() {
                                       placeholder=""
                                       required
                                       value={
-                                        defaultExtendedValues.thankYouLine
+                                        defaultExtendedValues.thankYouLine ||
+                                        ''
                                       }
                                       className="max-w-full w-full bg-white border border-[#dbdbdb] input-shadow text[#363636]"
                                       onChange={(e) =>
@@ -570,7 +564,7 @@ export default function DefaultSurvey() {
                                       required
                                       value={
                                         defaultExtendedValues.thumbsupReasonHeader ||
-                                        '😀 you did enjoy your NAME email 😀'
+                                        ''
                                       }
                                       className="max-w-full w-full bg-white border border-[#dbdbdb] input-shadow text[#363636]"
                                       onChange={(e) =>
@@ -601,7 +595,8 @@ export default function DefaultSurvey() {
                                       placeholder=""
                                       required
                                       value={
-                                        defaultExtendedValues.thumbsokReasonHeader
+                                        defaultExtendedValues.thumbsokReasonHeader ||
+                                        ''
                                       }
                                       className="max-w-full w-full bg-white border border-[#dbdbdb] input-shadow text[#363636]"
                                       onChange={(e) =>
@@ -632,7 +627,8 @@ export default function DefaultSurvey() {
                                       placeholder=""
                                       required
                                       value={
-                                        defaultExtendedValues.thumbsdownReasonHeader
+                                        defaultExtendedValues.thumbsdownReasonHeader ||
+                                        ''
                                       }
                                       className="max-w-full w-full bg-white border border-[#dbdbdb] input-shadow text[#363636]"
                                       onChange={(e) =>
@@ -663,7 +659,8 @@ export default function DefaultSurvey() {
                                       placeholder=""
                                       required
                                       value={
-                                        defaultExtendedValues.efpWhyBoxText
+                                        defaultExtendedValues.efpWhyBoxText ||
+                                        ''
                                       }
                                       className="max-w-full w-full bg-white border border-[#dbdbdb] input-shadow text[#363636]"
                                       onChange={(e) =>
@@ -694,7 +691,8 @@ export default function DefaultSurvey() {
                                       placeholder=""
                                       required
                                       value={
-                                        defaultExtendedValues.efpWhyBoxPlaceholder
+                                        defaultExtendedValues.efpWhyBoxPlaceholder ||
+                                        ''
                                       }
                                       className="max-w-full w-full bg-white border border-[#dbdbdb] input-shadow text[#363636]"
                                       onChange={(e) =>
@@ -726,7 +724,8 @@ export default function DefaultSurvey() {
                                       placeholder=""
                                       required
                                       value={
-                                        defaultExtendedValues.efpReaderNamePlaceholder
+                                        defaultExtendedValues.efpReaderNamePlaceholder ||
+                                        ''
                                       }
                                       className="max-w-full w-full bg-white border border-[#dbdbdb] input-shadow text[#363636]"
                                       onChange={(e) =>
@@ -758,7 +757,8 @@ export default function DefaultSurvey() {
                                       placeholder=""
                                       required
                                       value={
-                                        defaultExtendedValues.efpReaderEmailPlaceholder
+                                        defaultExtendedValues.efpReaderEmailPlaceholder ||
+                                        ''
                                       }
                                       className="max-w-full w-full bg-white border border-[#dbdbdb] input-shadow text[#363636]"
                                       onChange={(e) =>
@@ -773,10 +773,9 @@ export default function DefaultSurvey() {
                                     ></input>
                                   </div>
                                   <p className="block text-xs mt-1">
-                                    {' '}
                                     Leave the field empty to hide the
                                     input box on the extended feedback
-                                    page.{' '}
+                                    page.
                                   </p>
                                 </div>
 
@@ -795,7 +794,8 @@ export default function DefaultSurvey() {
                                       placeholder=""
                                       required
                                       value={
-                                        defaultExtendedValues.efpButtonText
+                                        defaultExtendedValues.efpButtonText ||
+                                        ''
                                       }
                                       className="max-w-full w-full bg-white border border-[#dbdbdb] input-shadow text[#363636]"
                                       onChange={(e) =>
@@ -823,7 +823,7 @@ export default function DefaultSurvey() {
                                           <div className="block basis-0 grow shrink p-3">
                                             <p className="text-base font-normal text-center text-[#363636] mb-3">
                                               {!defaultExtendedValues.thankYouLine
-                                                ? 'Thank you for sharing your thoughts'
+                                                ? ''
                                                 : defaultExtendedValues.thankYouLine}
                                             </p>
                                             <h2 className="text-3xl font-semibold text-center text-[#363636] mb-6">
@@ -839,7 +839,7 @@ export default function DefaultSurvey() {
                                               <div className="field !mb-8">
                                                 <label className="block text-lg text-[#363636] font-semibold mb-2">
                                                   {!defaultExtendedValues.efpWhyBoxText
-                                                    ? 'Why'
+                                                    ? ''
                                                     : defaultExtendedValues.efpWhyBoxText}
                                                 </label>
                                                 <div className="relative text-base">
@@ -847,7 +847,7 @@ export default function DefaultSurvey() {
                                                     className="h-40 max-h-[40rem] min-h-[8rem] text-lg  input-shadow rounded-md border border-[#dbdbdb]"
                                                     placeholder={
                                                       !defaultExtendedValues.efpWhyBoxPlaceholder
-                                                        ? 'Listen to your gut :-)'
+                                                        ? ''
                                                         : defaultExtendedValues.efpWhyBoxPlaceholder
                                                     }
                                                   ></textarea>
@@ -863,7 +863,7 @@ export default function DefaultSurvey() {
                                                     className="block input-shadow bg-white border border-[#dbdbdb] rounded-md color-[#363636]"
                                                     placeholder={
                                                       !defaultExtendedValues.efpReaderNamePlaceholder
-                                                        ? 'Enter your name or leave it blank to stay anonymous'
+                                                        ? ''
                                                         : defaultExtendedValues.efpReaderNamePlaceholder
                                                     }
                                                   ></input>
@@ -878,7 +878,7 @@ export default function DefaultSurvey() {
                                                     className="block input-shadow bg-white border border-[#dbdbdb] rounded-md color-[#363636]"
                                                     placeholder={
                                                       !defaultExtendedValues.efpReaderEmailPlaceholder
-                                                        ? 'Enter your email if you want a reply from me'
+                                                        ? ''
                                                         : defaultExtendedValues.efpReaderEmailPlaceholder
                                                     }
                                                   ></input>
@@ -887,7 +887,7 @@ export default function DefaultSurvey() {
                                               <div className="relative text-base">
                                                 <button className="button w-full text-xl mainBgColor border border-transparent rounded-md !text-white hover:bg- [#307af1]">
                                                   {!defaultExtendedValues.efpButtonText
-                                                    ? 'Send your message'
+                                                    ? ''
                                                     : defaultExtendedValues.efpButtonText}
                                                 </button>
                                               </div>
@@ -904,7 +904,7 @@ export default function DefaultSurvey() {
                         )}
                         {thankYouPage && (
                           <div>
-                            <div className="flex flex-wrap -my-3 -mx-8">
+                            <div className="columns flex-wrap -my-3 -mx-8">
                               <div className="block basis-0 grow shrink py-3 px-8">
                                 <p className="mb-4">
                                   The Thank You Page is shown to the
@@ -927,7 +927,8 @@ export default function DefaultSurvey() {
                                       placeholder=""
                                       required
                                       value={
-                                        defaultThanksValues.typHeadline
+                                        defaultThanksValues.typHeadline ||
+                                        ''
                                       }
                                       className="max-w-full w-full bg-white border border-[#dbdbdb] input-shadow text[#363636]"
                                       onChange={(e) =>
@@ -958,7 +959,8 @@ export default function DefaultSurvey() {
                                       placeholder=""
                                       required
                                       value={
-                                        defaultThanksValues.typSubHeadline
+                                        defaultThanksValues.typSubHeadline ||
+                                        ''
                                       }
                                       className="max-w-full w-full bg-white border border-[#dbdbdb] input-shadow text[#363636]"
                                       onChange={(e) =>
@@ -989,7 +991,8 @@ export default function DefaultSurvey() {
                                       placeholder=""
                                       required
                                       value={
-                                        defaultThanksValues.typShareTwitterHandle
+                                        defaultThanksValues.typShareTwitterHandle ||
+                                        ''
                                       }
                                       className="max-w-full w-full bg-white border border-[#dbdbdb] input-shadow text[#363636]"
                                       onChange={(e) =>
@@ -1024,7 +1027,8 @@ export default function DefaultSurvey() {
                                       placeholder=""
                                       required
                                       value={
-                                        defaultThanksValues.typShareButtonTwitter
+                                        defaultThanksValues.typShareButtonTwitter ||
+                                        ''
                                       }
                                       className="max-w-full w-full bg-white border border-[#dbdbdb] input-shadow text[#363636]"
                                       onChange={(e) =>
@@ -1055,7 +1059,8 @@ export default function DefaultSurvey() {
                                       placeholder=""
                                       required
                                       value={
-                                        defaultThanksValues.typRedirect
+                                        defaultThanksValues.typRedirect ||
+                                        ''
                                       }
                                       className="max-w-full w-full bg-white border border-[#dbdbdb] input-shadow text[#363636]"
                                       onChange={(e) =>
@@ -1080,12 +1085,12 @@ export default function DefaultSurvey() {
                                     <div className="container grow w-auto relative my-0 mx-auto">
                                       <h1 className="text-3xl font-semibold text-center text-[#363636] mb-6">
                                         {!defaultThanksValues.typHeadline
-                                          ? 'Thank you for sharing your thoughts'
+                                          ? ''
                                           : defaultThanksValues.typHeadline}
                                       </h1>
                                       <h2 className="text-xl font-normal text-center grow shrink-0 -mt-5 mb-6">
                                         {!defaultThanksValues.typSubHeadline
-                                          ? 'We wish you a wonderful day and stay safe!'
+                                          ? ''
                                           : defaultThanksValues.typSubHeadline}
                                       </h2>
                                       {defaultThanksValues.typShareTwitterHandle ? (
@@ -1097,7 +1102,7 @@ export default function DefaultSurvey() {
                                             className="button !bg-[#3298dc] rounded-md !border-transparent !text-white"
                                           >
                                             {!defaultThanksValues.typShareButtonTwitter
-                                              ? 'Share your feedback on Twitter'
+                                              ? ''
                                               : defaultThanksValues.typShareButtonTwitter}
                                           </a>
                                         </p>

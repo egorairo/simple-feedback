@@ -1,19 +1,20 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 
+import FAQ from '../components/FAQ'
 import Header from '../components/Header'
-import Feedbacks from '../components/Feedbacks'
 import Footer from '../components/Footer'
-export default function FeedbacksPage({path}) {
+
+export default function DashboardPage({path}) {
   return (
     <>
-      <Header surveysPath={path} />
-      <Feedbacks />
+      <Header path={path} />
+      <FAQ />
       <Footer />
     </>
   )
 }
 
-FeedbacksPage.propTypes = {
+DashboardPage.propTypes = {
   path: PropTypes.string,
 }

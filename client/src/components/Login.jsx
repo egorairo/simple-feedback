@@ -53,6 +53,7 @@ export default function Login() {
               <form onSubmit={handleLogIn}>
                 <div className="mb-3">
                   <input
+                    type="email"
                     className="w-full max-w-full py-2 px-3 rounded-md border border-[#dbdbdb] input-shadow"
                     placeholder="Your email"
                     onChange={(e) => setEmail(e.target.value)}
@@ -60,6 +61,7 @@ export default function Login() {
                 </div>
                 <div className="mb-3">
                   <input
+                    type="password"
                     className="w-full max-w-full py-2 px-3 rounded-md border border-[#dbdbdb] input-shadow"
                     placeholder="Your password"
                     onChange={(e) => setPassword(e.target.value)}

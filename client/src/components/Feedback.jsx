@@ -1,26 +1,58 @@
 import React, {useCallback, useEffect, useState} from 'react'
 import {useSelector, useDispatch} from 'react-redux'
-import {Link} from 'react-router-dom'
+import {Link, useLocation} from 'react-router-dom'
 import {useNavigate} from 'react-router-dom'
 import {useParams} from 'react-router-dom'
+import {decodeToken} from 'react-jwt'
 
+import Chart from './Chart'
 import {setNames} from '../store/namesReducer'
 import {setVotingValues} from '../store/votingReducer'
 import {setExtendedValues} from '../store/extendedReducer'
 import {setThanksValues} from '../store/thanksReducer'
+import DeleteSvg from '../../public/img/delete.svg?component'
+
+const withEmojis = /\p{Extended_Pictographic}/u
+
+function useQuery() {
+  const {search} = useLocation()
+
+  return React.useMemo(() => new URLSearchParams(search), [search])
+}
+
+const dateFeedbacks = (array, feedbackDate) => {
+  return array.filter(({date}) => {
+    const newDate = new Date(date)
+      .toISOString()
+      .replace(/T.*/, '')
+      .split('-')
+      .join('-')
+
+    if (newDate === feedbackDate) {
+      return date
+    }
+  }).length
+}
 
 export default function Feedback() {
   const {id} = useParams()
+  const query = useQuery()
   const navigate = useNavigate()
   const dispatch = useDispatch()
 
   const [surveys, setSurveys] = useState([])
+  const [givenFeedbacks, setGivenFeedbacks] = useState([])
+  const [givenFeedback, setGivenFeedback] = useState([])
 
   const [saved, setSaved] = useState(false)
 
-  const [analytics, setAnalytics] = useState(false)
+  const [analytics, setAnalytics] = useState(
+    query.get('created') === 'true' ? false : true
+  )
   const [edit, setEdit] = useState(false)
-  const [code, setCode] = useState(true)
+  const [code, setCode] = useState(
+    query.get('created') === 'true' ? true : false
+  )
 
   const [voting, setVoting] = useState(true)
   const [extendedPage, setExtendedPage] = useState(false)
@@ -41,6 +73,38 @@ export default function Feedback() {
   const extendedValues = useSelector((state) => state.extendedValues)
   const thanksValues = useSelector((state) => state.thanksValues)
 
+  const greatFeedbacks = givenFeedback.filter((givenFeedback) => {
+    if (givenFeedback.id === id) {
+      return givenFeedback.num === '1'
+    }
+  })
+  const okFeedbacks = givenFeedback.filter((givenFeedback) => {
+    if (givenFeedback.id === id) {
+      return givenFeedback.num === '2'
+    }
+  })
+  const badFeedbacks = givenFeedback.filter((givenFeedback) => {
+    if (givenFeedback.id === id) {
+      return givenFeedback.num === '3'
+    }
+  })
+
+  const dateGivenFeedback = givenFeedback.map(({date}) => {
+    const newDate = new Date(date)
+      .toISOString()
+      .replace(/T.*/, '')
+      .split('-')
+      .join('-')
+
+    return newDate
+  })
+
+  const uniqDates = dateGivenFeedback.filter(
+    (dateGivenFeedback, pos) => {
+      return dateGivenFeedback.indexOf(dateGivenFeedback) == pos
+    }
+  )
+
   const getSurveys = async () => {
     const req = await fetch('http://localhost:1337/api/surveys', {
       headers: {
@@ -56,7 +120,7 @@ export default function Feedback() {
       setSurveys(surveys)
 
       const [survey] = surveys.filter((survey) => survey.id === id)
-
+      console.log(survey)
       setEditNameValues(survey.names || nameValues)
       setEditVotingValues(survey.votingValues || votingValues)
       setEditExtendedValues(survey.extendedValues || extendedValues)
@@ -66,8 +130,44 @@ export default function Feedback() {
     }
   }
 
+  const getGivenFeedbacks = async () => {
+    const req = await fetch(
+      'http://localhost:1337/api/giveFeedback',
+      {
+        headers: {
+          'x-access-token': localStorage.getItem('token'),
+        },
+      }
+    )
+
+    const data = await req.json()
+
+    if (data.status === 'ok') {
+      const givenFeedback = data.givenFeedback.filter(
+        (givenFeedback) => givenFeedback.id === id
+      )
+
+      setGivenFeedbacks(data.givenFeedback)
+      setGivenFeedback(givenFeedback)
+    } else {
+      alert(data.error)
+    }
+  }
+
   useEffect(() => {
-    getSurveys()
+    window.scrollTo(0, 0)
+
+    const token = localStorage.getItem('token')
+    if (token) {
+      const user = decodeToken(token)
+      if (!user) {
+        localStorage.removeItem('token')
+        navigate('/')
+      } else {
+        getSurveys()
+        getGivenFeedbacks()
+      }
+    }
   }, [])
 
   const updateSurveys = async (surveys) => {
@@ -91,7 +191,31 @@ export default function Feedback() {
     }
   }
 
-  const handleClickSaveSurvey = () => {
+  const updateGivenFeedbacks = async (givenFeedback) => {
+    const req = await fetch(
+      'http://localhost:1337/api/giveFeedback',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-access-token': localStorage.getItem('token'),
+        },
+        body: JSON.stringify({
+          givenFeedback: givenFeedback,
+        }),
+      }
+    )
+
+    const data = await req.json()
+
+    if (data.status === 'ok') {
+      setGivenFeedbacks(givenFeedback)
+    } else {
+      return data.error
+    }
+  }
+
+  const handleSaveSurvey = () => {
     const newSurveys = surveys.map((survey) => {
       if (survey.id === id) {
         survey.names = editNameValues
@@ -117,27 +241,37 @@ export default function Feedback() {
     }, 3000)
   }
 
-  const handleClickDeleteSurvey = (id) => {
+  const handleDeleteSurvey = (id) => {
     const newSurveys = surveys.filter((survey) => survey.id !== id)
+    const newGivenFeedbacks = givenFeedbacks.filter(
+      (givenFeedback) => givenFeedback.id !== id
+    )
 
     setSurveys(newSurveys)
+    setGivenFeedbacks(newGivenFeedbacks)
 
     updateSurveys(newSurveys)
+    updateGivenFeedbacks(newGivenFeedbacks)
 
     navigate('/feedbacks')
   }
 
-  // coping logic
-  const handleClickBulletsCopy = useCallback(() => {
-    const copyText =
-      document.querySelector('#bullets-survey').innerText
+  // copying logic
+  const handleCopyBulletsTheme = useCallback(async () => {
+    const copyText = document.querySelector('#bullets-survey')
 
-    navigator.clipboard.writeText(copyText).then(() => {
-      setBulletsCopied(true)
-    })
+    const text = copyText,
+      range = document.createRange()
+    range.selectNodeContents(text),
+      window.getSelection().removeAllRanges(),
+      window.getSelection().addRange(range),
+      document.execCommand('copy'),
+      window.getSelection().removeAllRanges()
+
+    setBulletsCopied(true)
   }, [])
 
-  const handleClickHtmlBulletsCopy = useCallback(() => {
+  const handleCopyHtmlBulletsTheme = useCallback(() => {
     const copyHtml =
       document.querySelector('#bullets-survey').innerHTML
 
@@ -146,16 +280,21 @@ export default function Feedback() {
     })
   }, [])
 
-  const handleClickInlineCopy = useCallback(() => {
-    const copyText =
-      document.querySelector('#inline-survey').innerText
+  const handleCopyInlineTheme = useCallback(() => {
+    const copyText = document.querySelector('#inline-survey')
 
-    navigator.clipboard.writeText(copyText).then(() => {
-      setInlineCopied(true)
-    })
+    const text = copyText,
+      range = document.createRange()
+    range.selectNodeContents(text),
+      window.getSelection().removeAllRanges(),
+      window.getSelection().addRange(range),
+      document.execCommand('copy'),
+      window.getSelection().removeAllRanges()
+
+    setInlineCopied(true)
   }, [])
 
-  const handleClickHtmlInlineCopy = useCallback(() => {
+  const handleCopyHtmlInlineTheme = useCallback(() => {
     const copyHtml =
       document.querySelector('#inline-survey').innerHTML
 
@@ -176,8 +315,6 @@ export default function Feedback() {
   const handleClickThumbsDown = useCallback(() => {
     navigate(`/feedback/give/3/${id}`)
   }, [])
-
-  const reasons = true
 
   return (
     <>
@@ -246,36 +383,72 @@ export default function Feedback() {
             <div className="border border-[#dbdbdb] border-t-transparent bg-white rounded-b-md p-5">
               {analytics && (
                 <div>
-                  <div className="flex  justify-center -m-3">
-                    <div className="w-1/2 p-3">
+                  <div className="columns justify-center -m-3">
+                    <div className="column is-half p-3">
                       <div className="bg-[#222] text-white rounded-md block p-5 mb-6">
                         <div className="mb-6 m-auto">
-                          <h2>{`Total: {number of votes}`}</h2>
-                          <div></div>
+                          <h2>{`Total: ${givenFeedback.length}`}</h2>
+                          <div className="w-40 h-40 mx-auto">
+                            <Chart
+                              great={greatFeedbacks.length}
+                              ok={okFeedbacks.length}
+                              bad={badFeedbacks.length}
+                            />
+                          </div>
                         </div>
                         <div className="flex items-center justify-between grow">
                           <div className="flex justify-center text-center grow mr-3">
                             <div>
                               <p className="text-xl">😀</p>
-                              <p className="text-3xl text-[#2acd6d] font-normal">
-                                0
+                              <p className="text-[40px] text-[#2acd6d] font-normal">
+                                {!greatFeedbacks
+                                  ? '0'
+                                  : greatFeedbacks.length}
                               </p>
+                              <p className="text-[#2acd6d] m-0 p-0">{`${
+                                greatFeedbacks.length
+                                  ? Math.round(
+                                      (greatFeedbacks.length * 100) /
+                                        givenFeedback.length
+                                    )
+                                  : '0'
+                              }%`}</p>
                             </div>
                           </div>
                           <div className="flex justify-center text-center grow mr-3">
                             <div>
                               <p className="text-xl">😐</p>
-                              <p className="text-3xl text-[#fff44f] font-normal">
-                                0
+                              <p className="text-[40px] text-[#fff44f] font-normal">
+                                {!okFeedbacks
+                                  ? '0'
+                                  : okFeedbacks.length}
                               </p>
+                              <p className="text-[#fff44f] m-0 p-0">{`${
+                                okFeedbacks.length
+                                  ? Math.round(
+                                      (okFeedbacks.length * 100) /
+                                        givenFeedback.length
+                                    )
+                                  : '0'
+                              }%`}</p>
                             </div>
                           </div>
                           <div className="flex justify-center text-center grow mr-3">
                             <div>
                               <p className="text-xl">🙁</p>
-                              <p className="text-3xl text-[#ec5757] font-normal">
-                                0
+                              <p className="text-[40px] text-[#ec5757] font-normal">
+                                {!badFeedbacks
+                                  ? '0'
+                                  : badFeedbacks.length}
                               </p>
+                              <p className="text-[#ec5757] m-0 p-0">{`${
+                                badFeedbacks.length
+                                  ? Math.round(
+                                      (badFeedbacks.length * 100) /
+                                        givenFeedback.length
+                                    )
+                                  : '0'
+                              }%`}</p>
                             </div>
                           </div>
                         </div>
@@ -298,27 +471,154 @@ export default function Feedback() {
                             </th>
                           </tr>
                         </thead>
-                        <tbody></tbody>
+                        <tbody>
+                          {uniqDates.map((uniqDate, index) => {
+                            return (
+                              <tr key={index}>
+                                <td>{uniqDate}</td>
+                                <td>
+                                  {dateFeedbacks(
+                                    greatFeedbacks,
+                                    uniqDate
+                                  )}
+                                </td>
+                                <td>
+                                  {dateFeedbacks(
+                                    okFeedbacks,
+                                    uniqDate
+                                  )}
+                                </td>
+                                <td>
+                                  {dateFeedbacks(
+                                    badFeedbacks,
+                                    uniqDate
+                                  )}
+                                </td>
+                              </tr>
+                            )
+                          })}
+                        </tbody>
                       </table>
                     </div>
 
-                    <div className="w-1/2 p-3">
+                    <div className="column is-half p-3">
                       <h2 className="text-[#4a4a4a] mb-4 m-0 p-0">
                         Reasons
                       </h2>
-                      {reasons ? (
+                      {givenFeedback.length === 0 ? (
                         <p>
                           No extended feedback reported by your
                           readers.
                         </p>
                       ) : (
-                        <div className="mb-4">
-                          <div className="block text-[#4a4a4a] bg-white p-5 m-1">
-                            <div className="flex items-start">
-                              <p>Тут отзывы</p>
+                        givenFeedback.map((givenFeedback, index) => {
+                          const currentSurvey = surveys.find(
+                            (survey) => survey.id === givenFeedback.id
+                          )
+                          console.log(
+                            givenFeedbacks,
+                            surveys,
+                            currentSurvey
+                          )
+                          const great = !withEmojis.test(
+                            currentSurvey.extendedValues?.thumbsupReasonHeader.substring(
+                              0,
+                              2
+                            )
+                          )
+                            ? currentSurvey.extendedValues.thumbsupReasonHeader.split(
+                                ' '
+                              )[0]
+                            : String.fromCodePoint(
+                                `0x${currentSurvey?.extendedValues.thumbsupReasonHeader
+                                  .codePointAt(0)
+                                  .toString(16)}`
+                              )
+
+                          const ok = !withEmojis.test(
+                            currentSurvey.extendedValues?.thumbsokReasonHeader.substring(
+                              0,
+                              2
+                            )
+                          )
+                            ? currentSurvey.extendedValues.thumbsokReasonHeader.split(
+                                ' '
+                              )[0]
+                            : String.fromCodePoint(
+                                `0x${currentSurvey?.extendedValues.thumbsokReasonHeader
+                                  .codePointAt(0)
+                                  .toString(16)}`
+                              )
+
+                          const bad = !withEmojis.test(
+                            currentSurvey.extendedValues?.thumbsdownReasonHeader.substring(
+                              0,
+                              2
+                            )
+                          )
+                            ? currentSurvey.extendedValues.thumbsdownReasonHeader.split(
+                                ' '
+                              )[0]
+                            : String.fromCodePoint(
+                                `0x${currentSurvey?.extendedValues.thumbsdownReasonHeader
+                                  .codePointAt(0)
+                                  .toString(16)}`
+                              )
+
+                          return (
+                            <div className="w-full p-3" key={index}>
+                              <div className="text[#4a4a4a] bg-white rounded-md feedbackBlockShadow p-5">
+                                <div className="flex items-baseline">
+                                  <div className="mr-2">
+                                    <p className="p-0 m-0">
+                                      {givenFeedback.num === '1' && (
+                                        <span>{great}</span>
+                                      )}
+                                      {givenFeedback.num === '2' && (
+                                        <span>{ok}</span>
+                                      )}
+                                      {givenFeedback.num === '3' && (
+                                        <span>{bad}</span>
+                                      )}
+                                    </p>
+                                  </div>
+                                  <div className="grow shrink basis-auto">
+                                    <p className="text-[#4a4a4a] p-0 m-0">
+                                      {givenFeedback.feedbackReason}
+                                    </p>
+                                    {givenFeedback.efpReaderNamePlaceholder ||
+                                    givenFeedback.efpReaderEmailPlaceholder ? (
+                                      <p className="text-right text-base text-[#4a4a4a]">{`By ${
+                                        !givenFeedback.efpReaderNamePlaceholder
+                                          ? ''
+                                          : givenFeedback.efpReaderNamePlaceholder
+                                      } ${
+                                        !givenFeedback.efpReaderEmailPlaceholder
+                                          ? ''
+                                          : `, ${givenFeedback.efpReaderEmailPlaceholder}`
+                                      }`}</p>
+                                    ) : (
+                                      ''
+                                    )}
+                                  </div>
+                                  <div className="ml-4">
+                                    <p className="p-0 m-0">
+                                      <button
+                                        onClick={() =>
+                                          handleDeleteSurvey(
+                                            givenFeedback.id
+                                          )
+                                        }
+                                      >
+                                        <DeleteSvg />
+                                      </button>
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
                             </div>
-                          </div>
-                        </div>
+                          )
+                        })
                       )}
                     </div>
                   </div>
@@ -326,9 +626,8 @@ export default function Feedback() {
               )}
               {edit && (
                 <div>
-                  <div className="flex flex-wrap -m-3">
+                  <div className="columns flex-wrap -m-3">
                     <div className="column">
-                      {/* <div className="w-full p-3"> */}
                       <div className="mb-3">
                         <label
                           htmlFor="name"
@@ -368,7 +667,7 @@ export default function Feedback() {
                             type="text"
                             placeholder="Your name that can be used in a placeholder on the extended feedback page"
                             required
-                            value={editNameValues.name}
+                            value={editNameValues.name || ''}
                             className="max-w-full w-full bg-white border border-[#dbdbdb] rounded-md input-shadow text[#363636]"
                             onChange={(e) =>
                               setEditNameValues((prevValue) => ({
@@ -439,7 +738,7 @@ export default function Feedback() {
                         <div>
                           {voting && (
                             <div>
-                              <div className="flex flex-wrap -my-3 -mx-8">
+                              <div className="columns flex-wrap -my-3 -mx-8">
                                 <div className="block basis-0 grow shrink py-3 px-8">
                                   <p className="mb-4">
                                     The voting section is the part you
@@ -461,7 +760,8 @@ export default function Feedback() {
                                         placeholder=""
                                         required
                                         value={
-                                          editVotingValues.thumbsHeadline
+                                          editVotingValues.thumbsHeadline ||
+                                          ''
                                         }
                                         className="max-w-full w-full bg-white border border-[#dbdbdb] input-shadow text[#363636]"
                                         onChange={(e) =>
@@ -493,7 +793,7 @@ export default function Feedback() {
                                         required
                                         value={
                                           editVotingValues.thumbsParagraph ||
-                                          'With your feedback, we can improve the letter. Click on a link to vote:'
+                                          ''
                                         }
                                         className="max-w-full w-full bg-white border border-[#dbdbdb] input-shadow text[#363636]"
                                         onChange={(e) =>
@@ -525,7 +825,7 @@ export default function Feedback() {
                                         required
                                         value={
                                           editVotingValues.thumbsup ||
-                                          '😀 That helped me. Thanks'
+                                          ''
                                         }
                                         className="max-w-full w-full bg-white border border-[#dbdbdb] input-shadow text[#363636]"
                                         onChange={(e) =>
@@ -561,7 +861,7 @@ export default function Feedback() {
                                         required
                                         value={
                                           editVotingValues.thumbsok ||
-                                          '😐 Meh - was ok.'
+                                          ''
                                         }
                                         className="max-w-full w-full bg-white border border-[#dbdbdb] input-shadow text[#363636]"
                                         onChange={(e) =>
@@ -597,7 +897,7 @@ export default function Feedback() {
                                         required
                                         value={
                                           editVotingValues.thumbsdown ||
-                                          '🙁 Not interesting to me.'
+                                          ''
                                         }
                                         className="max-w-full w-full bg-white border border-[#dbdbdb] input-shadow text[#363636]"
                                         onChange={(e) =>
@@ -628,15 +928,13 @@ export default function Feedback() {
                                   <div className="bg-white rounded-md block text-lg p-5 mb-6">
                                     <p className="text-xl font-normal mb-4">
                                       <strong className="text-[#363636]">
-                                        {!editVotingValues.thumbsHeadline
-                                          ? 'Was it useful? Help us to improve!'
-                                          : editVotingValues.thumbsHeadline}
+                                        {editVotingValues.thumbsHeadline ||
+                                          ''}
                                       </strong>
                                     </p>
                                     <p className="text-xl mb-4">
-                                      {!editVotingValues.thumbsParagraph
-                                        ? 'With your feedback, we can improve the letter. Click on a link to vote:'
-                                        : editVotingValues.thumbsParagraph}
+                                      {editVotingValues.thumbsParagraph ||
+                                        ''}
                                     </p>
                                     <ul className="list-disc mt-8 ml-4">
                                       <li>
@@ -646,9 +944,8 @@ export default function Feedback() {
                                             handleClickThumbsUp
                                           }
                                         >
-                                          {!editVotingValues.thumbsup
-                                            ? '😀 That helped me. Thanks'
-                                            : editVotingValues.thumbsup}
+                                          {editVotingValues.thumbsup ||
+                                            ''}
                                         </a>
                                       </li>
                                       <li className="mt-1">
@@ -658,9 +955,8 @@ export default function Feedback() {
                                             handleClickThumbsOk
                                           }
                                         >
-                                          {!editVotingValues.thumbsok
-                                            ? '😐 Meh - was ok.'
-                                            : editVotingValues.thumbsok}
+                                          {editVotingValues.thumbsok ||
+                                            ''}
                                         </a>
                                       </li>
                                       <li className="mt-1">
@@ -670,9 +966,8 @@ export default function Feedback() {
                                             handleClickThumbsDown
                                           }
                                         >
-                                          {!editVotingValues.thumbsdown
-                                            ? '🙁 Not interesting to me.'
-                                            : editVotingValues.thumbsdown}
+                                          {editVotingValues.thumbsdown ||
+                                            ''}
                                         </a>
                                       </li>
                                     </ul>
@@ -684,33 +979,29 @@ export default function Feedback() {
                                   <div className="bg-white rounded-md block text-lg p-5 mb-6">
                                     <p className="text-xl font-normal mb-4">
                                       <strong className="text-[#363636]">
-                                        {!editVotingValues.thumbsHeadline
-                                          ? 'Was it useful? Help us to improve!'
-                                          : editVotingValues.thumbsHeadline}
+                                        {editVotingValues.thumbsHeadline ||
+                                          ''}
                                       </strong>
                                     </p>
                                     <p className="text-xls mb-4">
-                                      {!editVotingValues.thumbsParagraph
-                                        ? 'With your feedback, we can improve the letter. Click on a link to vote:'
-                                        : editVotingValues.thumbsParagraph}
+                                      {editVotingValues.thumbsParagraph ||
+                                        ''}
                                     </p>
                                     <p className="">
                                       <a
                                         className="text-xl cursor-pointer text-[#4185f3] no-underline hover:text-[#1c6def]"
                                         onClick={handleClickThumbsUp}
                                       >
-                                        {!editVotingValues.thumbsup
-                                          ? '😀 That helped me. Thanks'
-                                          : editVotingValues.thumbsup}
+                                        {editVotingValues.thumbsup ||
+                                          ''}
                                       </a>{' '}
                                       -{' '}
                                       <a
                                         className="text-xl cursor-pointer text-[#4185f3] no-underline hover:text-[#1c6def]"
                                         onClick={handleClickThumbsOk}
                                       >
-                                        {!editVotingValues.thumbsok
-                                          ? '😐 Meh - was ok.'
-                                          : editVotingValues.thumbsok}
+                                        {editVotingValues.thumbsok ||
+                                          ''}
                                       </a>{' '}
                                       -{' '}
                                       <a
@@ -719,9 +1010,8 @@ export default function Feedback() {
                                           handleClickThumbsDown
                                         }
                                       >
-                                        {!editVotingValues.thumbsdown
-                                          ? '🙁 Not interesting to me.'
-                                          : editVotingValues.thumbsdown}
+                                        {editVotingValues.thumbsdown ||
+                                          ''}
                                       </a>
                                     </p>
                                   </div>
@@ -731,7 +1021,7 @@ export default function Feedback() {
                           )}
                           {extendedPage && (
                             <div>
-                              <div className="flex flex-wrap -my-3 -mx-8">
+                              <div className="columns flex-wrap -my-3 -mx-8">
                                 <div className="block basis-0 grow shrink py-3 px-8">
                                   <p className="text-[#4a4a4a] mb-4">
                                     The Extended Feedback Page is
@@ -763,7 +1053,7 @@ export default function Feedback() {
                                         required
                                         value={
                                           editExtendedValues.thankYouLine ||
-                                          'Thank you. Your feedback was successfully shared.'
+                                          ''
                                         }
                                         className="max-w-full w-full bg-white border border-[#dbdbdb] input-shadow text[#363636]"
                                         onChange={(e) =>
@@ -795,7 +1085,7 @@ export default function Feedback() {
                                         required
                                         value={
                                           editExtendedValues.thumbsupReasonHeader ||
-                                          '😀 you did enjoy your NAME email 😀'
+                                          ''
                                         }
                                         className="max-w-full w-full bg-white border border-[#dbdbdb] input-shadow text[#363636]"
                                         onChange={(e) =>
@@ -827,7 +1117,7 @@ export default function Feedback() {
                                         required
                                         value={
                                           editExtendedValues.thumbsokReasonHeader ||
-                                          '😐 you are not sure what to think about NAME email 😐'
+                                          ''
                                         }
                                         className="max-w-full w-full bg-white border border-[#dbdbdb] input-shadow text[#363636]"
                                         onChange={(e) =>
@@ -859,7 +1149,7 @@ export default function Feedback() {
                                         required
                                         value={
                                           editExtendedValues.thumbsdownReasonHeader ||
-                                          '😐 you didn’t enjoy this email 😐'
+                                          ''
                                         }
                                         className="max-w-full w-full bg-white border border-[#dbdbdb] input-shadow text[#363636]"
                                         onChange={(e) =>
@@ -891,7 +1181,7 @@ export default function Feedback() {
                                         required
                                         value={
                                           editExtendedValues.efpWhyBoxText ||
-                                          'Why'
+                                          ''
                                         }
                                         className="max-w-full w-full bg-white border border-[#dbdbdb] input-shadow text[#363636]"
                                         onChange={(e) =>
@@ -923,7 +1213,7 @@ export default function Feedback() {
                                         required
                                         value={
                                           editExtendedValues.efpWhyBoxPlaceholder ||
-                                          'Listen to your gut :-)'
+                                          ''
                                         }
                                         className="max-w-full w-full bg-white border border-[#dbdbdb] input-shadow text[#363636]"
                                         onChange={(e) =>
@@ -956,7 +1246,7 @@ export default function Feedback() {
                                         required
                                         value={
                                           editExtendedValues.efpReaderNamePlaceholder ||
-                                          'Enter your name or leave it blank to stay anonymous'
+                                          ''
                                         }
                                         className="max-w-full w-full bg-white border border-[#dbdbdb] input-shadow text[#363636]"
                                         onChange={(e) =>
@@ -989,7 +1279,7 @@ export default function Feedback() {
                                         required
                                         value={
                                           editExtendedValues.efpReaderEmailPlaceholder ||
-                                          'Enter your email if you want a reply from me'
+                                          ''
                                         }
                                         className="max-w-full w-full bg-white border border-[#dbdbdb] input-shadow text[#363636]"
                                         onChange={(e) =>
@@ -1025,8 +1315,8 @@ export default function Feedback() {
                                         placeholder=""
                                         required
                                         value={
-                                          editExtendedValues.efpButtonText ||
-                                          'Send your message'
+                                          editExtendedValues.efpButtonText |
+                                          ''
                                         }
                                         className="max-w-full w-full bg-white border border-[#dbdbdb] input-shadow text[#363636]"
                                         onChange={(e) =>
@@ -1053,12 +1343,11 @@ export default function Feedback() {
                                           <div className="justify-center -m-3">
                                             <div className="block basis-0 grow shrink p-3">
                                               <p className="text-base font-normal text-center text-[#363636] mb-3">
-                                                {!editExtendedValues.thankYouLine
-                                                  ? 'Thank you for sharing your thoughts'
-                                                  : editExtendedValues.thankYouLine}
+                                                {editExtendedValues.thankYouLine ||
+                                                  ''}
                                               </p>
                                               <h2 className="text-3xl font-semibold text-center text-[#363636] mb-6">
-                                                {!editExtendedValues.thumbsupReasonHeader
+                                                {editExtendedValues.thumbsupReasonHeader
                                                   ? `😀 you did enjoy ${
                                                       !editNameValues.name
                                                         ? 'this'
@@ -1069,17 +1358,15 @@ export default function Feedback() {
                                               <form className="block">
                                                 <div className="field !mb-8">
                                                   <label className="block text-lg text-[#363636] font-semibold mb-2">
-                                                    {!editExtendedValues.efpWhyBoxText
-                                                      ? 'Why'
-                                                      : editExtendedValues.efpWhyBoxText}
+                                                    {editExtendedValues.efpWhyBoxText ||
+                                                      ''}
                                                   </label>
                                                   <div className="relative text-base">
                                                     <textarea
                                                       className="h-40 max-h-[40rem] min-h-[8rem] text-lg  input-shadow rounded-md border border-[#dbdbdb]"
                                                       placeholder={
-                                                        !editExtendedValues.efpWhyBoxPlaceholder
-                                                          ? 'Listen to your gut :-)'
-                                                          : editExtendedValues.efpWhyBoxPlaceholder
+                                                        editExtendedValues.efpWhyBoxPlaceholder ||
+                                                        ''
                                                       }
                                                     ></textarea>
                                                   </div>
@@ -1087,39 +1374,45 @@ export default function Feedback() {
 
                                                 <div className="field">
                                                   <div className="relative text-base">
-                                                    <input
-                                                      id="efpReaderNamePlaceholder"
-                                                      name="name"
-                                                      type="text"
-                                                      className="block input-shadow bg-white border border-[#dbdbdb] rounded-md color-[#363636]"
-                                                      placeholder={
-                                                        !editExtendedValues.efpReaderNamePlaceholder
-                                                          ? 'Enter your name or leave it blank to stay anonymous'
-                                                          : editExtendedValues.efpReaderNamePlaceholder
-                                                      }
-                                                    ></input>
+                                                    {editExtendedValues.efpReaderNamePlaceholder ===
+                                                    '' ? (
+                                                      ''
+                                                    ) : (
+                                                      <input
+                                                        id="efpReaderNamePlaceholder"
+                                                        name="name"
+                                                        type="text"
+                                                        className="block input-shadow bg-white border border-[#dbdbdb] rounded-md color-[#363636]"
+                                                        placeholder={
+                                                          editExtendedValues.efpReaderNamePlaceholder ||
+                                                          ''
+                                                        }
+                                                      ></input>
+                                                    )}
                                                   </div>
                                                 </div>
                                                 <div className="field">
                                                   <div className="relative text-base">
-                                                    <input
-                                                      id="efpReaderEmailPlaceholder"
-                                                      name="name"
-                                                      type="text"
-                                                      className="block input-shadow bg-white border border-[#dbdbdb] rounded-md color-[#363636]"
-                                                      placeholder={
-                                                        !editExtendedValues.efpReaderEmailPlaceholder
-                                                          ? 'Enter your email if you want a reply from me'
-                                                          : editExtendedValues.efpReaderEmailPlaceholder
-                                                      }
-                                                    ></input>
+                                                    {!editExtendedValues.efpReaderEmailPlaceholder ? (
+                                                      ''
+                                                    ) : (
+                                                      <input
+                                                        id="efpReaderEmailPlaceholder"
+                                                        name="name"
+                                                        type="text"
+                                                        className="block input-shadow bg-white border border-[#dbdbdb] rounded-md color-[#363636]"
+                                                        placeholder={
+                                                          editExtendedValues.efpReaderEmailPlaceholder ||
+                                                          ''
+                                                        }
+                                                      ></input>
+                                                    )}
                                                   </div>
                                                 </div>
                                                 <div className="relative text-base">
-                                                  <button className="button w-full text-xl mainBgColor border border-transparent rounded-md !text-white hover:bg- [#307af1]">
-                                                    {!editExtendedValues.efpButtonText
-                                                      ? 'Send your message'
-                                                      : editExtendedValues.efpButtonText}
+                                                  <button className="button w-full text-xl mainBgColor border border-transparent rounded-md !text-white hover:bg-[#307af1]">
+                                                    {editExtendedValues.efpButtonText ||
+                                                      ''}
                                                   </button>
                                                 </div>
                                               </form>
@@ -1135,7 +1428,7 @@ export default function Feedback() {
                           )}
                           {thankYouPage && (
                             <div>
-                              <div className="flex flex-wrap -my-3 -mx-8">
+                              <div className="columns flex-wrap -my-3 -mx-8">
                                 <div className="block basis-0 grow shrink py-3 px-8">
                                   <p className="mb-4">
                                     The Thank You Page is shown to the
@@ -1158,8 +1451,7 @@ export default function Feedback() {
                                         placeholder=""
                                         required
                                         value={
-                                          editThanksValues.typHeadline ||
-                                          'Thank you for sharing your thoughts'
+                                          editThanksValues.typHeadline
                                         }
                                         className="max-w-full w-full bg-white border border-[#dbdbdb] input-shadow text[#363636]"
                                         onChange={(e) =>
@@ -1190,8 +1482,7 @@ export default function Feedback() {
                                         placeholder=""
                                         required
                                         value={
-                                          editThanksValues.typSubHeadline ||
-                                          'We wish you a wonderful day and stay safe!'
+                                          editThanksValues.typSubHeadline
                                         }
                                         className="max-w-full w-full bg-white border border-[#dbdbdb] input-shadow text[#363636]"
                                         onChange={(e) =>
@@ -1258,8 +1549,7 @@ export default function Feedback() {
                                         placeholder=""
                                         required
                                         value={
-                                          editThanksValues.typShareButtonTwitter ||
-                                          'Share your feedback on Twitter'
+                                          editThanksValues.typShareButtonTwitter
                                         }
                                         className="max-w-full w-full bg-white border border-[#dbdbdb] input-shadow text[#363636]"
                                         onChange={(e) =>
@@ -1290,8 +1580,7 @@ export default function Feedback() {
                                         placeholder=""
                                         required
                                         value={
-                                          editThanksValues.typRedirect ||
-                                          'https://mydomain.com/myredirect'
+                                          editThanksValues.typRedirect
                                         }
                                         className="max-w-full w-full bg-white border border-[#dbdbdb] input-shadow text[#363636]"
                                         onChange={(e) =>
@@ -1315,14 +1604,12 @@ export default function Feedback() {
                                     <div className="flex items-center grow shrink-0 py-12 px-6">
                                       <div className="container grow w-auto relative my-0 mx-auto">
                                         <h1 className="text-3xl font-semibold text-center text-[#363636] mb-6">
-                                          {!editThanksValues.typHeadline
-                                            ? 'Thank you for sharing your thoughts'
-                                            : editThanksValues.typHeadline}
+                                          {editThanksValues.typHeadline ||
+                                            ''}
                                         </h1>
                                         <h2 className="text-xl font-normal text-center grow shrink-0 -mt-5 mb-6">
-                                          {!editThanksValues.typSubHeadline
-                                            ? 'We wish you a wonderful day and stay safe!'
-                                            : editThanksValues.typSubHeadline}
+                                          {editThanksValues.typSubHeadline ||
+                                            ''}
                                         </h2>
                                         {editThanksValues.typShareTwitterHandle ? (
                                           <p className="block text-center m-0 p-0">
@@ -1332,9 +1619,8 @@ export default function Feedback() {
                                               }
                                               className="button !bg-[#3298dc] rounded-md !border-transparent !text-white"
                                             >
-                                              {!editThanksValues.typShareButtonTwitter
-                                                ? 'Share your feedback on Twitter'
-                                                : editThanksValues.typShareButtonTwitter}
+                                              {editThanksValues.typShareButtonTwitter ||
+                                                ''}
                                             </a>
                                           </p>
                                         ) : (
@@ -1361,7 +1647,7 @@ export default function Feedback() {
                             disabled={
                               !editNameValues.formName ? true : false
                             }
-                            onClick={handleClickSaveSurvey}
+                            onClick={handleSaveSurvey}
                           >
                             Save
                           </button>
@@ -1370,9 +1656,7 @@ export default function Feedback() {
                           <button
                             type="button"
                             className={`button rounded-md !border-[#d9534f] !text-[#d9534f] hover:bg-[#d9534f] hover:!text-white`}
-                            onClick={() =>
-                              handleClickDeleteSurvey(id)
-                            }
+                            onClick={() => handleDeleteSurvey(id)}
                           >
                             Delete
                           </button>
@@ -1388,7 +1672,7 @@ export default function Feedback() {
                     Copy a block and paste it into you email.
                   </h2>
 
-                  <div className="flex flex-wrap -m-3">
+                  <div className="columns flex-wrap -m-3">
                     <div className="column is-half">
                       <h2 className="text-lg text-[#4a4a4a] font-normal m-0 p-0">
                         Theme Bullets
@@ -1401,7 +1685,7 @@ export default function Feedback() {
                               ? '!border !border-[#dbdbdb]'
                               : 'mainColor !border !border-[#dbdbdb]'
                           } button !bg-white !text-xs rounded hover:!border hover:!border-[#b5b5b5]`}
-                          onClick={(e) => handleClickBulletsCopy(e)}
+                          onClick={(e) => handleCopyBulletsTheme(e)}
                         >
                           {!bulletsCopied ? 'Copy' : 'Copied'}
                         </Link>
@@ -1412,7 +1696,7 @@ export default function Feedback() {
                               ? '!border !border-[#dbdbdb]'
                               : 'mainColor !border !border-[#dbdbdb]'
                           } button !bg-white !text-xs rounded hover:!border hover:!border-[#b5b5b5]`}
-                          onClick={handleClickHtmlBulletsCopy}
+                          onClick={handleCopyHtmlBulletsTheme}
                         >
                           {!bulletsHtmlCopied
                             ? 'Copy as HTML'
@@ -1426,24 +1710,26 @@ export default function Feedback() {
                         <p className="mb-4">
                           <strong className="text-[#363636] font-bold">
                             {!editVotingValues.thumbsHeadline
-                              ? 'Was it useful? Help us to improve!'
+                              ? ''
                               : editVotingValues.thumbsHeadline}
                           </strong>
                         </p>
                         <p className="mb-4">
-                          With your feedback, we can improve the
-                          letter. Click on a link to vote:
+                          {!editVotingValues.thumbsParagraph
+                            ? ''
+                            : editVotingValues.thumbsParagraph}
                         </p>
                         <ul className="list-disc my-4 ml-8">
                           <li className="m-0 p-0">
                             <a
+                              id="bullet-thumbsup"
                               target="_blank"
                               rel="noreferrer"
                               href={`/feedback/give/1/${id}`}
                               className="text-xl cursor-pointer text-[#4185f3] no-underline hover:text-[#1c6def]"
                             >
                               {!editVotingValues.thumbsup
-                                ? '😀 That helped me. Thanks'
+                                ? ''
                                 : editVotingValues.thumbsup}
                             </a>
                           </li>
@@ -1455,7 +1741,7 @@ export default function Feedback() {
                               className="text-xl cursor-pointer text-[#4185f3] no-underline hover:text-[#1c6def]"
                             >
                               {!editVotingValues.thumbsok
-                                ? '😐 Meh - was ok.'
+                                ? ''
                                 : editVotingValues.thumbsok}
                             </a>
                           </li>
@@ -1467,7 +1753,7 @@ export default function Feedback() {
                               className="text-xl cursor-pointer text-[#4185f3] no-underline hover:text-[#1c6def]"
                             >
                               {!editVotingValues.thumbsdown
-                                ? '🙁 Not interesting to me.'
+                                ? ''
                                 : editVotingValues.thumbsdown}
                             </a>
                           </li>
@@ -1496,7 +1782,7 @@ export default function Feedback() {
                               ? '!border !border-[#dbdbdb]'
                               : 'mainColor !border !border-[#dbdbdb]'
                           } button !bg-white !text-xs rounded hover:!border hover:!border-[#b5b5b5]`}
-                          onClick={handleClickInlineCopy}
+                          onClick={handleCopyInlineTheme}
                         >
                           {!inlineCopied ? 'Copy' : 'Copied'}
                         </Link>
@@ -1507,7 +1793,7 @@ export default function Feedback() {
                               ? '!border !border-[#dbdbdb]'
                               : 'mainColor !border !border-[#dbdbdb]'
                           } button !bg-white !text-xs rounded hover:!border hover:!border-[#b5b5b5]`}
-                          onClick={handleClickHtmlInlineCopy}
+                          onClick={handleCopyHtmlInlineTheme}
                         >
                           {!inlineHtmlCopied
                             ? 'Copy as HTML'
@@ -1521,14 +1807,14 @@ export default function Feedback() {
                         <p className="text-xl font-normal mb-4">
                           <strong className="text-[#363636]">
                             {!editVotingValues.thumbsHeadline
-                              ? 'Was it useful? Help us to improve!'
+                              ? ''
                               : editVotingValues.thumbsHeadline}
                           </strong>
                         </p>
 
                         <p className="text-xls mb-4">
                           {!editVotingValues.thumbsParagraph
-                            ? 'With your feedback, we can improve the letter. Click on a link to vote:'
+                            ? ''
                             : editVotingValues.thumbsParagraph}
                         </p>
                         <p className="mb-4">
@@ -1539,7 +1825,7 @@ export default function Feedback() {
                             className="text-xl cursor-pointer text-[#4185f3] no-underline hover:text-[#1c6def]"
                           >
                             {!editVotingValues.thumbsup
-                              ? '😀 That helped me. Thanks'
+                              ? ''
                               : editVotingValues.thumbsup}
                           </a>{' '}
                           -{' '}
@@ -1550,7 +1836,7 @@ export default function Feedback() {
                             className="text-xl cursor-pointer text-[#4185f3] no-underline hover:text-[#1c6def]"
                           >
                             {!editVotingValues.thumbsok
-                              ? '😐 Meh - was ok.'
+                              ? ''
                               : editVotingValues.thumbsok}
                           </a>{' '}
                           -{' '}
@@ -1561,7 +1847,7 @@ export default function Feedback() {
                             className="text-xl cursor-pointer text-[#4185f3] no-underline hover:text-[#1c6def]"
                           >
                             {!editVotingValues.thumbsdown
-                              ? '🙁 Not interesting to me.'
+                              ? ''
                               : editVotingValues.thumbsdown}
                           </a>
                         </p>

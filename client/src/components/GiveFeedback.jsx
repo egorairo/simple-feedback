@@ -1,11 +1,14 @@
 import React, {useEffect, useState} from 'react'
-import {useParams} from 'react-router-dom'
+import {Link, useParams} from 'react-router-dom'
+
+const replaceWord = /NAME/
 
 export default function GiveFeedback() {
   const {num, id} = useParams()
 
   const [submited, setSubmited] = useState(false)
 
+  const [givenFeedbacks, setGivenFeedbacks] = useState([])
   const [givenFeedback, setGivenFeedback] = useState({})
   const [extendedValues, setExtendedValues] = useState({})
   const [nameValues, setNameValues] = useState({})
@@ -33,11 +36,33 @@ export default function GiveFeedback() {
     }
   }
 
+  const getGivenFeedbacks = async () => {
+    const req = await fetch(
+      'http://localhost:1337/api/giveFeedback',
+      {
+        headers: {
+          'x-access-token': localStorage.getItem('token'),
+        },
+      }
+    )
+
+    const data = await req.json()
+
+    if (data.status === 'ok') {
+      const givenFeedbacks = data.givenFeedback
+
+      setGivenFeedbacks(givenFeedbacks)
+    } else {
+      alert(data.error)
+    }
+  }
+
   useEffect(() => {
     getSurvey()
+    getGivenFeedbacks()
   }, [])
 
-  const updateGivenFeedback = async (givenFeedback) => {
+  const updateGivenFeedbacks = async (givenFeedback) => {
     const req = await fetch(
       'http://localhost:1337/api/giveFeedback',
       {
@@ -64,17 +89,29 @@ export default function GiveFeedback() {
   const handleSubmitGiveFeedback = (event) => {
     event.preventDefault()
 
+    const date = new Date()
+
     const newGivenFeedback = Object.assign(
       {},
       {
         id: id,
       },
+      {num: num},
+      {date: date},
       givenFeedback
     )
 
-    setGivenFeedback(newGivenFeedback)
+    let newGivenFeedbacks = []
 
-    updateGivenFeedback(newGivenFeedback)
+    if (givenFeedbacks) {
+      newGivenFeedbacks = [...givenFeedbacks, ...[newGivenFeedback]]
+    } else {
+      newGivenFeedbacks = [newGivenFeedback]
+    }
+
+    setGivenFeedbacks(newGivenFeedbacks)
+
+    updateGivenFeedbacks(newGivenFeedbacks)
 
     setSubmited(true)
   }
@@ -86,39 +123,43 @@ export default function GiveFeedback() {
           <div className="container grow w-auto relative my-0 mx-auto">
             {!submited ? (
               <div className="flex justify-center -m-3">
-                <div className="column is-6-desktop is-8-desktop p-3">
+                <div className="column is-6-desktop p-3">
                   <p className="!text-center mb-3">
                     Thank you. Your feedback was successfully shared.
                   </p>
                   <h2 className="title text-center mb-6">
                     {num === '1'
-                      ? !extendedValues.thumbsupReasonHeader
-                        ? `😀 you did enjoy ${
-                            !nameValues.name
-                              ? 'this'
-                              : `${nameValues.name}'s`
-                          } email 😀`
-                        : extendedValues.thumbsupReasonHeader
+                      ? !nameValues.name
+                        ? extendedValues.thumbsupReasonHeader?.replace(
+                            replaceWord,
+                            'this'
+                          )
+                        : extendedValues.thumbsupReasonHeader?.replace(
+                            replaceWord,
+                            `${nameValues.name}'s`
+                          )
                       : ''}
-
                     {num === '2'
-                      ? !extendedValues.thumbsupReasonHeader
-                        ? `😐 you are not sure what to think about ${
-                            !nameValues.name
-                              ? 'this'
-                              : `${nameValues.name}'s`
-                          } email 😐`
-                        : extendedValues.thumbsupReasonHeader
+                      ? !nameValues.name
+                        ? extendedValues.thumbsokReasonHeader?.replace(
+                            replaceWord,
+                            'this'
+                          )
+                        : extendedValues.thumbsokReasonHeader?.replace(
+                            replaceWord,
+                            `${nameValues.name}'s`
+                          )
                       : ''}
-
                     {num === '3'
-                      ? !extendedValues.thumbsupReasonHeader
-                        ? `😐 you didn’t enjoy ${
-                            !nameValues.name
-                              ? 'this'
-                              : `${nameValues.name}'s`
-                          } email 😐`
-                        : extendedValues.thumbsupReasonHeader
+                      ? !nameValues.name
+                        ? extendedValues.thumbsdownReasonHeader?.replace(
+                            replaceWord,
+                            'this'
+                          )
+                        : extendedValues.thumbsdownReasonHeader?.replace(
+                            replaceWord,
+                            `${nameValues.name}'s`
+                          )
                       : ''}
                   </h2>
 
@@ -136,8 +177,7 @@ export default function GiveFeedback() {
                           name="feedback-reason"
                           required
                           placeholder={
-                            extendedValues.efpWhyBoxPlaceholder ||
-                            'Listen to your gut :-)'
+                            extendedValues.efpWhyBoxPlaceholder || ''
                           }
                           onChange={(e) =>
                             setGivenFeedback((prevValue) => ({
@@ -149,58 +189,61 @@ export default function GiveFeedback() {
                       </div>
                     </div>
 
-                    <div className="mb-3">
-                      <div className="text-base box-border relative">
-                        <input
-                          id="efpReaderNamePlaceholder"
-                          name="efpReaderNamePlaceholder"
-                          type="text"
-                          placeholder={
-                            extendedValues.efpReaderNamePlaceholder
-                          }
-                          className="max-w-full w-full bg-white border border-[#dbdbdb] input-shadow text[#363636]"
-                          onChange={(e) =>
-                            setGivenFeedback((prevValue) => ({
-                              ...prevValue,
-                              efpReaderNamePlaceholder:
-                                e.target.value,
-                            }))
-                          }
-                        ></input>
+                    {extendedValues.efpReaderNamePlaceholder && (
+                      <div className="mb-3">
+                        <div className="text-base box-border relative">
+                          <input
+                            id="efpReaderNamePlaceholder"
+                            name="efpReaderNamePlaceholder"
+                            type="text"
+                            placeholder={
+                              extendedValues.efpReaderNamePlaceholder ||
+                              ''
+                            }
+                            className="max-w-full w-full bg-white border border-[#dbdbdb] input-shadow text[#363636]"
+                            onChange={(e) =>
+                              setGivenFeedback((prevValue) => ({
+                                ...prevValue,
+                                efpReaderNamePlaceholder:
+                                  e.target.value,
+                              }))
+                            }
+                          ></input>
+                        </div>
                       </div>
-                    </div>
+                    )}
 
-                    <div className="mb-3">
-                      <div className="text-base box-border relative">
-                        <input
-                          id="efpReaderEmailPlaceholder"
-                          name="efpReaderEmailPlaceholder"
-                          type="text"
-                          placeholder={
-                            extendedValues.efpReaderEmailPlaceholder
-                          }
-                          className="max-w-full w-full bg-white border border-[#dbdbdb] input-shadow text[#363636]"
-                          onChange={(e) =>
-                            setGivenFeedback((prevValue) => ({
-                              ...prevValue,
-                              efpReaderEmailPlaceholder:
-                                e.target.value,
-                            }))
-                          }
-                        ></input>
+                    {extendedValues.efpReaderEmailPlaceholder && (
+                      <div className="mb-3">
+                        <div className="text-base box-border relative">
+                          <input
+                            id="efpReaderEmailPlaceholder"
+                            name="efpReaderEmailPlaceholder"
+                            type="text"
+                            placeholder={
+                              extendedValues.efpReaderEmailPlaceholder ||
+                              ''
+                            }
+                            className="max-w-full w-full bg-white border border-[#dbdbdb] input-shadow text[#363636]"
+                            onChange={(e) =>
+                              setGivenFeedback((prevValue) => ({
+                                ...prevValue,
+                                efpReaderEmailPlaceholder:
+                                  e.target.value,
+                              }))
+                            }
+                          ></input>
+                        </div>
                       </div>
-                    </div>
+                    )}
 
                     <div className="relative text-base">
                       <button
                         name="submitBtn"
                         type="submit"
-                        className="button w-full text-xl mainBgColor border border-transparent rounded-md !text-white hover:bg- [#307af1]"
+                        className="button w-full text-xl mainBgColor cursor-pointer border border-transparent rounded-md !text-white hover:bg-[#307af1]"
                       >
-                        {`${
-                          extendedValues.efpButtonText ||
-                          'Send your message'
-                        }`}
+                        {extendedValues.efpButtonText || ''}
                       </button>
                     </div>
                   </form>
@@ -210,22 +253,28 @@ export default function GiveFeedback() {
               <>
                 <h1 className="text-3xl font-semibold text-center text-[#363636] mb-6">
                   {!thanksValues.typHeadline
-                    ? 'Thank you for sharing your thoughts'
+                    ? ''
                     : thanksValues.typHeadline}
                 </h1>
                 <h2 className="text-xl font-normal text-center grow shrink-0 -mt-5 mb-6">
                   {!thanksValues.typSubHeadline
-                    ? 'We wish you a wonderful day and stay safe!'
+                    ? ''
                     : thanksValues.typSubHeadline}
                 </h2>
                 {thanksValues.typShareTwitterHandle ? (
                   <p className="block text-center m-0 p-0">
                     <a
-                      href={thanksValues.typShareTwitterHandle}
+                      target="_blank"
+                      rel="noreferrer"
+                      href={
+                        thanksValues.typRedirect +
+                        '/' +
+                        thanksValues.typShareTwitterHandle
+                      }
                       className="button !bg-[#3298dc] rounded-md !border-transparent !text-white"
                     >
                       {!thanksValues.typShareButtonTwitter
-                        ? 'Share your feedback on Twitter'
+                        ? ''
                         : thanksValues.typShareButtonTwitter}
                     </a>
                   </p>
@@ -238,13 +287,13 @@ export default function GiveFeedback() {
         </div>
         <div className="container text-center !grow-0 !mb-4 ">
           <p>
-            Build your own? 👉
-            <a
-              href="#"
+            Build your own? 👉{' '}
+            <Link
+              to="/"
               className="text-xl cursor-pointer text-[#4185f3] no-underline hover:text-[#1c6def]"
             >
               Feed↔Back.com
-            </a>
+            </Link>
           </p>
         </div>
       </section>

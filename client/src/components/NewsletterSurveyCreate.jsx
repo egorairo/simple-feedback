@@ -24,6 +24,7 @@ export default function NewsletterSurveyCreate() {
 
   const survey = useSelector((state) => state)
 
+  // const [survey, setSurvey] = useState({})
   const [surveys, setSurveys] = useState([])
   const [defaultSurvey, setDefaultSurvey] = useState([])
 
@@ -36,6 +37,7 @@ export default function NewsletterSurveyCreate() {
 
   const [nameValues, setNameValues] = useState({
     formName: '',
+    name: '',
   })
   const [customizeVotingFormValues, setCustomizeVotingFormValues] =
     useState({
@@ -51,7 +53,10 @@ export default function NewsletterSurveyCreate() {
     setCustomizeExtendedFormValues,
   ] = useState({
     thankYouLine: 'Thank you. Your feedback was successfully shared.',
-    thumbsdownReasonHeader: '😐 you didn’t enjoy this email 😐',
+    thumbsupReasonHeader: '😀 you did enjoy your NAME email 😀',
+    thumbsokReasonHeader:
+      '😐 you are not sure what to think about NAME email 😐',
+    thumbsdownReasonHeader: '🙁 you didn’t enjoy NAME email 🙁',
     efpWhyBoxText: 'Why',
     efpWhyBoxPlaceholder: 'Listen to your gut :-)',
     efpReaderNamePlaceholder:
@@ -66,7 +71,7 @@ export default function NewsletterSurveyCreate() {
       typSubHeadline: 'We wish you a wonderful day and stay safe!',
       typShareTwitterHandle: '',
       typShareButtonTwitter: 'Share your feedback on Twitter',
-      typRedirect: 'https://mydomain.com/myredirect',
+      typRedirect: 'https://twitter.com/',
     })
 
   async function getSurveys() {
@@ -152,7 +157,7 @@ export default function NewsletterSurveyCreate() {
     }
   }
 
-  const handleClickCreateSurvey = () => {
+  const handleCreateSurvey = () => {
     const id = survey.id
 
     const newSurveys = [...surveys, ...[survey]]
@@ -163,23 +168,31 @@ export default function NewsletterSurveyCreate() {
 
     updateSurveys(surveysWithoutDuplicates)
 
-    navigate(`/feedback/${id}`)
+    navigate(`/feedback/${id}?created=true`)
   }
 
-  const handleClickCreateDefaultSurvey = async () => {
-    if (defaultSurvey.length !== 0) {
+  const handleCreateUsingDefaultSurvey = async () => {
+    if (defaultSurvey) {
       getDefaultSurvey()
 
-      const names = Object.assign({}, nameValues, defaultSurvey.names)
+      const newNames = Object.assign(
+        {},
+        nameValues,
+        defaultSurvey.names
+      )
 
-      dispatch(setNames(names))
-      dispatch(setVotingValues(defaultSurvey.defaultVotingValues))
-      dispatch(setExtendedValues(defaultSurvey.defaultExtendedValues))
-      dispatch(setThanksValues(defaultSurvey.defaultThanksValues))
+      const newSurvey = {
+        id: surveyId,
+        names: newNames,
+        votingValues: defaultSurvey.votingValues,
+        extendedValues: defaultSurvey.extendedValues,
+        thanksValues: defaultSurvey.thanksValues,
+      }
 
-      const id = survey.id
+      const id = newSurvey.id
 
-      const newSurveys = [...surveys, ...[survey]]
+      const newSurveys = [...surveys, ...[newSurvey]]
+      console.log(newSurveys)
 
       const surveysWithoutDuplicates = removeDuplicates(newSurveys)
 
@@ -187,8 +200,9 @@ export default function NewsletterSurveyCreate() {
 
       updateSurveys(surveysWithoutDuplicates)
 
-      navigate(`/feedback/${id}`)
+      navigate(`/feedback/${id}?created=true`)
     } else {
+      console.log('ewe')
       setDefaultIsNotCreated(true)
 
       setTimeout(() => {
@@ -202,8 +216,8 @@ export default function NewsletterSurveyCreate() {
       <div>
         <section className="flex items-center bg-[#f1f1f1] py-36 px-6">
           <div className="container grow w-auto relative my-0 mx-auto">
-            <div className="feedbackBlockShadow flex flex-wrap justify-center bg-white rounded-md text-[#4a4a4a] p-5 -m-3">
-              <div className="w-1/2 p-3">
+            <div className="columns flex-wrap justify-center bg-white rounded-md feedbackBlockShadow text-[#4a4a4a] p-5 -m-3">
+              <div className="column is-half p-3">
                 <h1 className="text-[##363636] font-medium text-3xl mb-6">
                   Create Newsletter Survey
                 </h1>
@@ -278,7 +292,7 @@ export default function NewsletterSurveyCreate() {
                             ? `createUsingDefaultDisabled`
                             : 'createUsingDefault'
                         }`}
-                        onClick={handleClickCreateDefaultSurvey}
+                        onClick={handleCreateUsingDefaultSurvey}
                       >
                         Create using defaults
                       </button>
@@ -345,7 +359,7 @@ export default function NewsletterSurveyCreate() {
                   <div>
                     {voting && (
                       <div>
-                        <div className="flex flex-wrap -my-3 -mx-8">
+                        <div className="columns flex-wrap -my-3 -mx-8">
                           <div className="block basis-0 grow shrink py-3 px-8">
                             <p className="mb-4">
                               The voting section is the part you copy
@@ -367,7 +381,8 @@ export default function NewsletterSurveyCreate() {
                                   placeholder=""
                                   required
                                   value={
-                                    customizeVotingFormValues.thumbsHeadline
+                                    customizeVotingFormValues.thumbsHeadline ||
+                                    ''
                                   }
                                   className="max-w-full w-full bg-white border border-[#dbdbdb] input-shadow text[#363636]"
                                   onChange={(e) =>
@@ -398,7 +413,8 @@ export default function NewsletterSurveyCreate() {
                                   placeholder=""
                                   required
                                   value={
-                                    customizeVotingFormValues.thumbsParagraph
+                                    customizeVotingFormValues.thumbsParagraph ||
+                                    ''
                                   }
                                   className="max-w-full w-full bg-white border border-[#dbdbdb] input-shadow text[#363636]"
                                   onChange={(e) =>
@@ -429,7 +445,8 @@ export default function NewsletterSurveyCreate() {
                                   placeholder=""
                                   required
                                   value={
-                                    customizeVotingFormValues.thumbsup
+                                    customizeVotingFormValues.thumbsup ||
+                                    ''
                                   }
                                   className="max-w-full w-full bg-white border border-[#dbdbdb] input-shadow text[#363636]"
                                   onChange={(e) =>
@@ -463,7 +480,8 @@ export default function NewsletterSurveyCreate() {
                                   placeholder=""
                                   required
                                   value={
-                                    customizeVotingFormValues.thumbsok
+                                    customizeVotingFormValues.thumbsok ||
+                                    ''
                                   }
                                   className="max-w-full w-full bg-white border border-[#dbdbdb] input-shadow text[#363636]"
                                   onChange={(e) =>
@@ -497,7 +515,8 @@ export default function NewsletterSurveyCreate() {
                                   placeholder=""
                                   required
                                   value={
-                                    customizeVotingFormValues.thumbsdown
+                                    customizeVotingFormValues.thumbsdown ||
+                                    ''
                                   }
                                   className="max-w-full w-full bg-white border border-[#dbdbdb] input-shadow text[#363636]"
                                   onChange={(e) =>
@@ -528,34 +547,34 @@ export default function NewsletterSurveyCreate() {
                               <p className="text-xl font-normal mb-4">
                                 <strong className="text-[#363636]">
                                   {!customizeVotingFormValues.thumbsHeadline
-                                    ? 'Was it useful? Help us to improve!'
+                                    ? ''
                                     : customizeVotingFormValues.thumbsHeadline}
                                 </strong>
                               </p>
                               <p className="text-xl mb-4">
                                 {!customizeVotingFormValues.thumbsParagraph
-                                  ? 'With your feedback, we can improve the letter. Click on a link to vote:'
+                                  ? ''
                                   : customizeVotingFormValues.thumbsParagraph}
                               </p>
                               <ul className="list-disc mt-8 ml-4">
                                 <li>
                                   <a className="text-xl cursor-pointer text-[#4185f3] no-underline">
                                     {!customizeVotingFormValues.thumbsup
-                                      ? '😀 That helped me. Thanks'
+                                      ? ''
                                       : customizeVotingFormValues.thumbsup}
                                   </a>
                                 </li>
                                 <li className="mt-1">
                                   <a className="text-xl cursor-pointer text-[#4185f3] no-underline">
                                     {!customizeVotingFormValues.thumbsok
-                                      ? '😐 Meh - was ok.'
+                                      ? ''
                                       : customizeVotingFormValues.thumbsok}
                                   </a>
                                 </li>
                                 <li className="mt-1">
                                   <a className="text-xl cursor-pointer text-[#4185f3] no-underline">
                                     {!customizeVotingFormValues.thumbsdown
-                                      ? '🙁 Not interesting to me.'
+                                      ? ''
                                       : customizeVotingFormValues.thumbsdown}
                                   </a>
                                 </li>
@@ -569,31 +588,31 @@ export default function NewsletterSurveyCreate() {
                               <p className="text-xl font-normal mb-4">
                                 <strong className="text-[#363636]">
                                   {!customizeVotingFormValues.thumbsHeadline
-                                    ? 'Was it useful? Help us to improve!'
+                                    ? ''
                                     : customizeVotingFormValues.thumbsHeadline}
                                 </strong>
                               </p>
                               <p className="text-xls mb-4">
                                 {!customizeVotingFormValues.thumbsParagraph
-                                  ? 'With your feedback, we can improve the letter. Click on a link to vote:'
+                                  ? ''
                                   : customizeVotingFormValues.thumbsParagraph}
                               </p>
                               <p className="">
                                 <a className="text-xl cursor-pointer text-[#4185f3] no-underline">
                                   {!customizeVotingFormValues.thumbsup
-                                    ? '😀 That helped me. Thanks'
+                                    ? ''
                                     : customizeVotingFormValues.thumbsup}
                                 </a>{' '}
                                 -{' '}
                                 <a className="text-xl cursor-pointer text-[#4185f3] no-underline">
                                   {!customizeVotingFormValues.thumbsok
-                                    ? '😐 Meh - was ok.'
+                                    ? ''
                                     : customizeVotingFormValues.thumbsok}
                                 </a>{' '}
                                 -{' '}
                                 <a className="text-xl cursor-pointer text-[#4185f3] no-underline">
                                   {!customizeVotingFormValues.thumbsdown
-                                    ? '🙁 Not interesting to me.'
+                                    ? ''
                                     : customizeVotingFormValues.thumbsdown}
                                 </a>
                               </p>
@@ -604,7 +623,7 @@ export default function NewsletterSurveyCreate() {
                     )}
                     {extendedPage && (
                       <div>
-                        <div className="flex flex-wrap -my-3 -mx-8">
+                        <div className="columns flex-wrap -my-3 -mx-8">
                           <div className="block basis-0 grow shrink py-3 px-8">
                             <p className="text-[#4a4a4a] mb-4">
                               The Extended Feedback Page is shown when
@@ -633,7 +652,8 @@ export default function NewsletterSurveyCreate() {
                                   placeholder=""
                                   required
                                   value={
-                                    customizeExtendedFormValues.thankYouLine
+                                    customizeExtendedFormValues.thankYouLine ||
+                                    ''
                                   }
                                   className="max-w-full w-full bg-white border border-[#dbdbdb] input-shadow text[#363636]"
                                   onChange={(e) =>
@@ -663,9 +683,8 @@ export default function NewsletterSurveyCreate() {
                                   placeholder=""
                                   required
                                   value={
-                                    !customizeExtendedFormValues.thumbsupReasonHeader
-                                      ? `😀 you did enjoy your NAME email 😀`
-                                      : customizeExtendedFormValues.thumbsupReasonHeader
+                                    customizeExtendedFormValues.thumbsupReasonHeader ||
+                                    ''
                                   }
                                   className="max-w-full w-full bg-white border border-[#dbdbdb] input-shadow text[#363636]"
                                   onChange={(e) =>
@@ -695,9 +714,8 @@ export default function NewsletterSurveyCreate() {
                                   type="text"
                                   placeholder=""
                                   value={
-                                    !customizeExtendedFormValues.thumbsokReasonHeader
-                                      ? '😐 you are not sure what to think about NAME email 😐'
-                                      : customizeExtendedFormValues.thumbsokReasonHeader
+                                    customizeExtendedFormValues.thumbsokReasonHeader ||
+                                    ''
                                   }
                                   className="max-w-full w-full bg-white border border-[#dbdbdb] input-shadow text[#363636]"
                                   onChange={(e) =>
@@ -727,7 +745,8 @@ export default function NewsletterSurveyCreate() {
                                   type="text"
                                   placeholder=""
                                   value={
-                                    customizeExtendedFormValues.thumbsdownReasonHeader
+                                    customizeExtendedFormValues.thumbsdownReasonHeader ||
+                                    ''
                                   }
                                   className="max-w-full w-full bg-white border border-[#dbdbdb] input-shadow text[#363636]"
                                   onChange={(e) =>
@@ -758,7 +777,8 @@ export default function NewsletterSurveyCreate() {
                                   placeholder=""
                                   required
                                   value={
-                                    customizeExtendedFormValues.efpWhyBoxText
+                                    customizeExtendedFormValues.efpWhyBoxText ||
+                                    ''
                                   }
                                   className="max-w-full w-full bg-white border border-[#dbdbdb] input-shadow text[#363636]"
                                   onChange={(e) =>
@@ -788,7 +808,8 @@ export default function NewsletterSurveyCreate() {
                                   placeholder=""
                                   required
                                   value={
-                                    customizeExtendedFormValues.efpWhyBoxPlaceholder
+                                    customizeExtendedFormValues.efpWhyBoxPlaceholder ||
+                                    ''
                                   }
                                   className="max-w-full w-full bg-white border border-[#dbdbdb] input-shadow text[#363636]"
                                   onChange={(e) =>
@@ -819,7 +840,8 @@ export default function NewsletterSurveyCreate() {
                                   placeholder=""
                                   required
                                   value={
-                                    customizeExtendedFormValues.efpReaderNamePlaceholder
+                                    customizeExtendedFormValues.efpReaderNamePlaceholder ||
+                                    ''
                                   }
                                   className="max-w-full w-full bg-white border border-[#dbdbdb] input-shadow text[#363636]"
                                   onChange={(e) =>
@@ -851,7 +873,8 @@ export default function NewsletterSurveyCreate() {
                                   placeholder=""
                                   required
                                   value={
-                                    customizeExtendedFormValues.efpReaderEmailPlaceholder
+                                    customizeExtendedFormValues.efpReaderEmailPlaceholder ||
+                                    ''
                                   }
                                   className="max-w-full w-full bg-white border border-[#dbdbdb] input-shadow text[#363636]"
                                   onChange={(e) =>
@@ -887,7 +910,8 @@ export default function NewsletterSurveyCreate() {
                                   placeholder=""
                                   required
                                   value={
-                                    customizeExtendedFormValues.efpButtonText
+                                    customizeExtendedFormValues.efpButtonText ||
+                                    ''
                                   }
                                   className="max-w-full w-full bg-white border border-[#dbdbdb] input-shadow text[#363636]"
                                   onChange={(e) =>
@@ -914,7 +938,7 @@ export default function NewsletterSurveyCreate() {
                                       <div className="block basis-0 grow shrink p-3">
                                         <p className="text-base font-normal text-center text-[#363636] mb-3">
                                           {!customizeExtendedFormValues.thankYouLine
-                                            ? 'Thank you for sharing your thoughts'
+                                            ? ''
                                             : customizeExtendedFormValues.thankYouLine}
                                         </p>
                                         <h2 className="text-3xl font-semibold text-center text-[#363636] mb-6">
@@ -938,7 +962,7 @@ export default function NewsletterSurveyCreate() {
                                                 className="h-40 max-h-[40rem] min-h-[8rem] text-lg  input-shadow rounded-md border border-[#dbdbdb]"
                                                 placeholder={
                                                   !customizeExtendedFormValues.efpWhyBoxPlaceholder
-                                                    ? 'Listen to your gut :-)'
+                                                    ? ''
                                                     : customizeExtendedFormValues.efpWhyBoxPlaceholder
                                                 }
                                               ></textarea>
@@ -954,7 +978,7 @@ export default function NewsletterSurveyCreate() {
                                                 className="block input-shadow bg-white border border-[#dbdbdb] rounded-md color-[#363636]"
                                                 placeholder={
                                                   !customizeExtendedFormValues.efpReaderNamePlaceholder
-                                                    ? 'Enter your name or leave it blank to stay anonymous'
+                                                    ? ''
                                                     : customizeExtendedFormValues.efpReaderNamePlaceholder
                                                 }
                                               ></input>
@@ -969,16 +993,16 @@ export default function NewsletterSurveyCreate() {
                                                 className="block input-shadow bg-white border border-[#dbdbdb] rounded-md color-[#363636]"
                                                 placeholder={
                                                   !customizeExtendedFormValues.efpReaderEmailPlaceholder
-                                                    ? 'Enter your email if you want a reply from me'
+                                                    ? ''
                                                     : customizeExtendedFormValues.efpReaderEmailPlaceholder
                                                 }
                                               ></input>
                                             </div>
                                           </div>
                                           <div className="relative text-base">
-                                            <button className="button w-full text-xl mainBgColor border border-transparent rounded-md !text-white hover:bg- [#307af1]">
+                                            <button className="button w-full text-xl mainBgColor border border-transparent rounded-md !text-white hover:bg-[#307af1]">
                                               {!customizeExtendedFormValues.efpButtonText
-                                                ? 'Send your message'
+                                                ? ''
                                                 : customizeExtendedFormValues.efpButtonText}
                                             </button>
                                           </div>
@@ -995,7 +1019,7 @@ export default function NewsletterSurveyCreate() {
                     )}
                     {thankYouPage && (
                       <div>
-                        <div className="flex flex-wrap -my-3 -mx-8">
+                        <div className="columns flex-wrap -my-3 -mx-8">
                           <div className="block basis-0 grow shrink py-3 px-8">
                             <p className="mb-4">
                               The Thank You Page is shown to the
@@ -1018,7 +1042,8 @@ export default function NewsletterSurveyCreate() {
                                   placeholder=""
                                   required
                                   value={
-                                    customizeThanksFormValues.typHeadline
+                                    customizeThanksFormValues.typHeadline ||
+                                    ''
                                   }
                                   className="max-w-full w-full bg-white border border-[#dbdbdb] input-shadow text[#363636]"
                                   onChange={(e) =>
@@ -1048,7 +1073,8 @@ export default function NewsletterSurveyCreate() {
                                   placeholder=""
                                   required
                                   value={
-                                    customizeThanksFormValues.typSubHeadline
+                                    customizeThanksFormValues.typSubHeadline ||
+                                    ''
                                   }
                                   className="max-w-full w-full bg-white border border-[#dbdbdb] input-shadow text[#363636]"
                                   onChange={(e) =>
@@ -1079,7 +1105,8 @@ export default function NewsletterSurveyCreate() {
                                   placeholder=""
                                   required
                                   value={
-                                    customizeThanksFormValues.typShareTwitterHandle
+                                    customizeThanksFormValues.typShareTwitterHandle ||
+                                    ''
                                   }
                                   className="max-w-full w-full bg-white border border-[#dbdbdb] input-shadow text[#363636]"
                                   onChange={(e) =>
@@ -1114,7 +1141,8 @@ export default function NewsletterSurveyCreate() {
                                   placeholder=""
                                   required
                                   value={
-                                    customizeThanksFormValues.typShareButtonTwitter
+                                    customizeThanksFormValues.typShareButtonTwitter ||
+                                    ''
                                   }
                                   className="max-w-full w-full bg-white border border-[#dbdbdb] input-shadow text[#363636]"
                                   onChange={(e) =>
@@ -1142,11 +1170,13 @@ export default function NewsletterSurveyCreate() {
                                   id="typRedirect"
                                   name="typRedirect"
                                   type="text"
-                                  placeholder=""
-                                  required
-                                  value={
+                                  placeholder={
                                     customizeThanksFormValues.typRedirect
                                   }
+                                  required
+                                  // value={
+                                  //   customizeThanksFormValues.typRedirect
+                                  // }
                                   className="max-w-full w-full bg-white border border-[#dbdbdb] input-shadow text[#363636]"
                                   onChange={(e) =>
                                     setCustomizeThanksFormValues(
@@ -1169,12 +1199,12 @@ export default function NewsletterSurveyCreate() {
                                 <div className="container grow w-auto relative my-0 mx-auto">
                                   <h1 className="text-3xl font-semibold text-center text-[#363636] mb-6">
                                     {!customizeThanksFormValues.typHeadline
-                                      ? 'Thank you for sharing your thoughts'
+                                      ? ''
                                       : customizeThanksFormValues.typHeadline}
                                   </h1>
                                   <h2 className="text-xl font-normal text-center grow shrink-0 -mt-5 mb-6">
                                     {!customizeThanksFormValues.typSubHeadline
-                                      ? 'We wish you a wonderful day and stay safe!'
+                                      ? ''
                                       : customizeThanksFormValues.typSubHeadline}
                                   </h2>
                                   {customizeThanksFormValues.typShareTwitterHandle ? (
@@ -1186,7 +1216,7 @@ export default function NewsletterSurveyCreate() {
                                         className="button !bg-[#3298dc] rounded-md !border-transparent !text-white"
                                       >
                                         {!customizeThanksFormValues.typShareButtonTwitter
-                                          ? 'Share your feedback on Twitter'
+                                          ? ''
                                           : customizeThanksFormValues.typShareButtonTwitter}
                                       </a>
                                     </p>
@@ -1213,7 +1243,7 @@ export default function NewsletterSurveyCreate() {
                             ? 'disabledMainBgColor !cursor-default'
                             : 'mainBgColor hover:bg-[#307af1]'
                         } !text-white text-base button mainBgColor rounded-md`}
-                        onClick={handleClickCreateSurvey}
+                        onClick={handleCreateSurvey}
                       >
                         Create
                       </button>
