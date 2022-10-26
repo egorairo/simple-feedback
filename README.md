@@ -2,7 +2,12 @@
 
 SimpleFeedback simple feedback tool for newsletters & websites (ReactJS, NodeJS, MongoDB, ExpressJS)
 
-[View a demo](https://jobster-web.netlify.app/)
+## Features
+
+- ReactJS
+- NodeJS
+- MongoDB
+- ExpressJS
 
 ## How to run the project
 
