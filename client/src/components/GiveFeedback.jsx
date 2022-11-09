@@ -15,11 +15,14 @@ export default function GiveFeedback() {
   const [thanksValues, setThanksValues] = useState({})
 
   const getSurvey = async () => {
-    const req = await fetch('http://localhost:1337/api/surveys', {
-      headers: {
-        'x-access-token': localStorage.getItem('token'),
-      },
-    })
+    const req = await fetch(
+      'https://env-production.up.railway.app/api/surveys',
+      {
+        headers: {
+          'x-access-token': localStorage.getItem('token'),
+        },
+      }
+    )
 
     const data = await req.json()
 
@@ -38,7 +41,7 @@ export default function GiveFeedback() {
 
   const getGivenFeedbacks = async () => {
     const req = await fetch(
-      'http://localhost:1337/api/giveFeedback',
+      'https://env-production.up.railway.app/api/giveFeedback',
       {
         headers: {
           'x-access-token': localStorage.getItem('token'),
@@ -64,7 +67,7 @@ export default function GiveFeedback() {
 
   const updateGivenFeedbacks = async (givenFeedback) => {
     const req = await fetch(
-      'http://localhost:1337/api/giveFeedback',
+      'https://env-production.up.railway.app/api/giveFeedback',
       {
         method: 'POST',
         headers: {

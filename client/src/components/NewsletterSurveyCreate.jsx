@@ -75,11 +75,14 @@ export default function NewsletterSurveyCreate() {
     })
 
   async function getSurveys() {
-    const req = await fetch('http://localhost:1337/api/surveys', {
-      headers: {
-        'x-access-token': localStorage.getItem('token'),
-      },
-    })
+    const req = await fetch(
+      'https://env-production.up.railway.app/api/surveys',
+      {
+        headers: {
+          'x-access-token': localStorage.getItem('token'),
+        },
+      }
+    )
 
     const data = await req.json()
 
@@ -92,7 +95,7 @@ export default function NewsletterSurveyCreate() {
 
   async function getDefaultSurvey() {
     const req = await fetch(
-      'http://localhost:1337/api/defaultSurvey',
+      'https://env-production.up.railway.app/api/defaultSurvey',
       {
         headers: {
           'x-access-token': localStorage.getItem('token'),
@@ -137,16 +140,19 @@ export default function NewsletterSurveyCreate() {
   ])
 
   const updateSurveys = async (surveys) => {
-    const req = await fetch('http://localhost:1337/api/surveys', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-access-token': localStorage.getItem('token'),
-      },
-      body: JSON.stringify({
-        surveys: surveys,
-      }),
-    })
+    const req = await fetch(
+      'https://env-production.up.railway.app/api/surveys',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-access-token': localStorage.getItem('token'),
+        },
+        body: JSON.stringify({
+          surveys: surveys,
+        }),
+      }
+    )
 
     const data = await req.json()
 
@@ -192,7 +198,6 @@ export default function NewsletterSurveyCreate() {
       const id = newSurvey.id
 
       const newSurveys = [...surveys, ...[newSurvey]]
-      console.log(newSurveys)
 
       const surveysWithoutDuplicates = removeDuplicates(newSurveys)
 
@@ -202,7 +207,6 @@ export default function NewsletterSurveyCreate() {
 
       navigate(`/feedback/${id}?created=true`)
     } else {
-      console.log('ewe')
       setDefaultIsNotCreated(true)
 
       setTimeout(() => {

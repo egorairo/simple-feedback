@@ -47,7 +47,7 @@ export default function DefaultSurvey() {
 
   async function getDefaultSurvey() {
     const req = await fetch(
-      'http://localhost:1337/api/defaultSurvey',
+      'https://env-production.up.railway.app/api/defaultSurvey',
       {
         headers: {
           'x-access-token': localStorage.getItem('token'),
@@ -84,7 +84,7 @@ export default function DefaultSurvey() {
 
   const updateDefaultSurveys = async (defaultSurvey) => {
     const req = await fetch(
-      'http://localhost:1337/api/defaultSurvey',
+      'https://env-production.up.railway.app/api/defaultSurvey',
       {
         method: 'POST',
         headers: {

@@ -15,16 +15,19 @@ export default function Login() {
   async function handleLogIn(event) {
     event.preventDefault()
 
-    const response = await fetch('http://localhost:1337/api/login', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        email,
-        password,
-      }),
-    })
+    const response = await fetch(
+      'https://env-production.up.railway.app/api/login',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email,
+          password,
+        }),
+      }
+    )
 
     const data = await response.json()
 

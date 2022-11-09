@@ -12,7 +12,7 @@ export default function Login() {
     event.preventDefault()
 
     const response = await fetch(
-      'http://localhost:1337/api/register',
+      'https://env-production.up.railway.app/api/register',
       {
         method: 'POST',
         headers: {

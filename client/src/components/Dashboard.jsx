@@ -108,11 +108,14 @@ export default function Dashboard() {
   )
 
   async function getSurveys() {
-    const req = await fetch('http://localhost:1337/api/surveys', {
-      headers: {
-        'x-access-token': localStorage.getItem('token'),
-      },
-    })
+    const req = await fetch(
+      'https://env-production.up.railway.app/api/surveys',
+      {
+        headers: {
+          'x-access-token': localStorage.getItem('token'),
+        },
+      }
+    )
 
     const data = await req.json()
 
@@ -125,7 +128,7 @@ export default function Dashboard() {
 
   const getGivenFeedbacks = async () => {
     const req = await fetch(
-      'http://localhost:1337/api/giveFeedback',
+      'https://env-production.up.railway.app/api/giveFeedback',
       {
         headers: {
           'x-access-token': localStorage.getItem('token'),
@@ -165,16 +168,19 @@ export default function Dashboard() {
   }, [])
 
   const updateSurveys = async (surveys) => {
-    const req = await fetch('http://localhost:1337/api/surveys', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-access-token': localStorage.getItem('token'),
-      },
-      body: JSON.stringify({
-        surveys: surveys,
-      }),
-    })
+    const req = await fetch(
+      'https://env-production.up.railway.app/api/surveys',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-access-token': localStorage.getItem('token'),
+        },
+        body: JSON.stringify({
+          surveys: surveys,
+        }),
+      }
+    )
 
     const data = await req.json()
 
@@ -187,7 +193,7 @@ export default function Dashboard() {
 
   const updateGivenFeedbacks = async (givenFeedback) => {
     const req = await fetch(
-      'http://localhost:1337/api/giveFeedback',
+      'https://env-production.up.railway.app/api/giveFeedback',
       {
         method: 'POST',
         headers: {
@@ -214,7 +220,6 @@ export default function Dashboard() {
     const newGivenFeedbacks = givenFeedbacks.filter(
       (givenFeedback) => givenFeedback.id !== id
     )
-    console.log(newSurveys, newGivenFeedbacks)
 
     setSurveys(newSurveys)
     setGivenFeedbacks(newGivenFeedbacks)
@@ -428,7 +433,7 @@ export default function Dashboard() {
                     const currentSurvey = surveys.find(
                       (survey) => survey.id === givenFeedback.id
                     )
-                    console.log(givenFeedbacks, surveys)
+
                     const great = !withEmojis.test(
                       currentSurvey?.extendedValues.thumbsupReasonHeader?.substring(
                         0,

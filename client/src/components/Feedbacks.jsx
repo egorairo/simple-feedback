@@ -16,11 +16,14 @@ export default function Feedbacks() {
   const [searchedFormValue, setSearchedFormValue] = useState('')
 
   const getSurveys = async () => {
-    const req = await fetch('http://localhost:1337/api/surveys', {
-      headers: {
-        'x-access-token': localStorage.getItem('token'),
-      },
-    })
+    const req = await fetch(
+      'https://env-production.up.railway.app/api/surveys',
+      {
+        headers: {
+          'x-access-token': localStorage.getItem('token'),
+        },
+      }
+    )
 
     const data = await req.json()
 
@@ -34,7 +37,7 @@ export default function Feedbacks() {
 
   const getGivenFeedbacks = async () => {
     const req = await fetch(
-      'http://localhost:1337/api/giveFeedback',
+      'https://env-production.up.railway.app/api/giveFeedback',
       {
         headers: {
           'x-access-token': localStorage.getItem('token'),
@@ -43,7 +46,7 @@ export default function Feedbacks() {
     )
 
     const data = await req.json()
-    console.log(data)
+
     if (data.status === 'ok') {
       const givenFeedbacks = data.givenFeedback
 
@@ -117,8 +120,6 @@ export default function Feedbacks() {
               {displayedSurveys.length !== 0 ? (
                 <>
                   {displayedSurveys?.map((survey) => {
-                    // console.log(displayedSurveys)
-                    // console.log(givenFeedbacks)
                     const greatFeedbacks = givenFeedbacks.filter(
                       (givenFeedback) => {
                         if (givenFeedback.id === survey.id) {
